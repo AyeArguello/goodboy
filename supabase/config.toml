@@ -1,0 +1,33 @@
+project_id = "good-boy"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:3000"
+additional_redirect_urls = ["http://127.0.0.1:3000/admin"]
+jwt_expiry = 3600
+# Real access control is the ADMIN_EMAIL_ALLOWLIST check in the magic-link
+# callback (app/admin/auth/callback), which signs out anyone not allowlisted
+# immediately after their first login. This just lets the OTP flow work.
+enable_signup = true
+
+[auth.email]
+enable_confirmations = false
+
+[inbucket]
+enabled = true
+port = 54324

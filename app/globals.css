@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens from the Claude Design handoff
+ * (Good Boy Sistema.dc.html, section "3 · Design tokens"). Brand colors are
+ * flat surfaces/text only — never gradients or glass. Spacing/radii below
+ * intentionally reuse Tailwind's default scale, which already matches the
+ * brief's base-4 spacing scale exactly (space.1=4px … space.24=96px).
+ */
+@theme inline {
+  --color-lavender: #c4b2d8;
+  --color-lavender-100: #e9e2f0;
+  --color-purple: #684e7a;
+  --color-purple-700: #563f66;
+  --color-charcoal: #25282c;
+  --color-ink-soft: #55515b;
+  --color-canvas: #fbf8fc;
+
+  /* Semantic (derived, pending sign-off — see docs/assumptions.md §1). */
+  --color-error: #9e2f2a;
+  --color-error-bg: #fbeae8;
+  --color-warning: #5e450c;
+  --color-warning-bg: #fbf1dd;
+  --color-warning-line: #7a5a12;
+  --color-success: #1f5a3a;
+  --color-success-bg: #e4f1e9;
+  --color-success-line: #2e6a4b;
+  --color-rescheduled: #4f3a5e;
+  --color-rescheduled-bg: #e9e2f0;
+
+  --radius-sm: 7px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 28px;
+
+  --font-heading: var(--font-montserrat), system-ui, sans-serif;
+  --font-sans: var(--font-nunito-sans), system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+  --motion-fast: 160ms;
+  --motion-base: 200ms;
+  --motion-slow: 240ms;
+  --ease-standard: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/*
+ * These are defaults, not overrides — they must live in Tailwind's `base`
+ * layer so any `text-*`/`bg-*` utility (e.g. CtaLink's `text-white` on a
+ * purple button) wins the cascade. An unlayered `a { color }` rule would
+ * beat utility classes regardless of specificity, since unlayered CSS
+ * always outranks anything inside `@layer` — that bug made every white-text
+ * CTA rendered as an <a> invisible (purple text on a purple background).
+ */
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    background: var(--color-canvas);
+    color: var(--color-charcoal);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a {
+    color: var(--color-purple);
+  }
+  a:hover {
+    color: var(--color-charcoal);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Compensates the sticky header (72px) so anchor jumps don't hide the title. */
+section[id] {
+  scroll-margin-top: 88px;
+}
+
+/* Foco visible en todo elemento interactivo (regla de accesibilidad del diseño). */
+:focus-visible {
+  outline: 3px solid var(--color-charcoal);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

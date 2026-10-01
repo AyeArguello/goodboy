@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  # Fake-but-valid values so the production business-config gate (see
+  # lib/config/business.ts) doesn't block the build check in CI. These are
+  # NOT real business data — see docs/assumptions.md for what's pending.
+  NEXT_PUBLIC_SITE_URL: https://ci-build.example.com
+  NEXT_PUBLIC_LEGAL_ENTITY_NAME: "Razón social de ejemplo para CI"
+  NEXT_PUBLIC_BUSINESS_CANCELLATION_POLICY_TEXT: "Texto de ejemplo para CI."
+  NEXT_PUBLIC_CARD_SURCHARGE_PERCENT: "10"
+  NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-key
+
+jobs:
+  quality:
+    name: Typecheck, lint, unit tests, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm test
+      - run: pnpm build
+
+  db-and-e2e:
+    name: Supabase RLS/RPC + Playwright smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local Supabase (Postgres + Auth) and apply migrations
+        run: supabase start
+
+      - name: Integration tests (RLS, RPC, concurrency)
+        run: pnpm test:integration
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: E2E smoke
+        run: pnpm test:e2e
+
+      - run: supabase stop
+        if: always()
