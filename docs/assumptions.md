@@ -7,8 +7,10 @@ confirma datos de negocio que antes estaban pendientes y agrega un requisito nue
 verificación manual** — que cambia la máquina de estados de las citas. **Actualización v3 (2026-09-29):**
 llegaron `docs/plan-web-good-boy.md` (confirma dominio, correo admin y una grilla de sábado separada de la
 de lunes a viernes) y `docs/auditoria-seguridad-y-cumplimiento-good-boy.md` (auditoría legal/técnica con
-bloqueos P0, incluido un bug real de cancelación). La sección 6 explica v1→v2; la sección 7 explica
-puntualmente qué cambió en v3 y por qué.
+bloqueos P0, incluido un bug real de cancelación). **Actualización v4 (2026-10-01):** ronda de cierre técnico
+(proyecto Supabase remoto creado con las migraciones aplicadas, build gate de secretos, CI corregido,
+auditoría de secretos); los textos legales **no** se tocaron. La sección 6 explica v1→v2; la sección 7
+explica puntualmente qué cambió en v3 y por qué; la sección 8, v4.
 
 Mientras un dato siga en la sección 2 como pendiente, el código lo usa como placeholder tipado (ver
 `lib/config/business.ts`) y el build de producción falla si falta al momento del deploy. La lista de
@@ -125,12 +127,17 @@ técnica (qué bloquea el build); esa es la vista legal/operativa completa.
 | Logo en SVG/PNG transparente + favicon recortado                                     | Header, favicon, OG                                        | Alta                                                             |
 | Permiso de publicación de las 16 fotos + validación de captions                      | Galería, Hero                                              | Alta — ver auditoría "Aviso de fotos"                            |
 | Registrar `goodboy.com.ar` de verdad (dominio ya confirmado como disponible)         | `NEXT_PUBLIC_SITE_URL`, canonical, OG                      | Bloquea producción real (build ya no se bloquea por esto en dev) |
-| Proyecto Supabase real (URL + anon key + service role)                               | Todo el backend                                            | Bloquea ir a producción                                          |
+| Cargar en el hosting la URL, anon key y service role del proyecto Supabase remoto    | Todo el backend                                            | Bloquea ir a producción (el build falla si faltan — ver §8)      |
 | Credenciales Resend (opcional)                                                       | Alertas por correo                                         | No bloquea (adaptador noop en dev)                               |
 | Revisión final de abogado/a y contador/a + checklist completo                        | Ver `docs/auditoria-seguridad-y-cumplimiento-good-boy.md`  | Bloquea publicar ("No publicar todavía")                         |
 
 Ya no están pendientes (confirmados en v3, ver §7): dominio (`goodboy.com.ar`), correo admin
 (`ayelearguello.aa@gmail.com`), grilla de sábado.
+
+Ya no está pendiente (v4, ver §8): **el proyecto Supabase remoto existe** y tiene aplicadas las 8
+migraciones de `supabase/migrations/`. Lo que sigue abierto es operativo: decidir si ese proyecto es el de
+producción o el de preview (el README pide dos proyectos separados, nunca compartir base) y cargar sus
+claves como variables de entorno del hosting.
 
 ## 3. Decisiones tomadas (dentro del margen que no compromete dinero/agenda/privacidad)
 
@@ -181,14 +188,19 @@ webhook firmado + idempotencia más adelante, sin cambiar el modelo de datos.
 
 ## 5. Verificación realizada
 
-`pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm test` (45 tests), `pnpm build` (prod env) y `pnpm
-test:e2e` (16 tests) corridos y en verde en este entorno tras la ronda v3. Se verificó explícitamente que el
-build de producción **falla** sin `ADMIN_EMAIL_ALLOWLIST` o sin `RATE_LIMIT_HMAC_SECRET` (los dos gates
-nuevos en `next.config.ts`), y que las cabeceras de seguridad (CSP/HSTS/nosniff/Referrer-Policy/
-Permissions-Policy) aparecen en la respuesta de un build de producción real (`pnpm start`). `pnpm
-test:integration` (RLS/RPC/concurrencia/seña/agenda de sábado/validación de entrada) está escrito y
-actualizado para v3, pero no se ejecutó acá por falta de Docker — corre en CI y en cualquier máquina con
-Docker Desktop.
+Tras la ronda v4 (2026-10-01), en este entorno: `pnpm typecheck`, `pnpm lint`, `pnpm format:check`,
+`pnpm test` (68 tests), `pnpm build` (con las variables no reales del CI) y `pnpm test:e2e` (16 tests)
+pasan. Se verificó explícitamente que el build de producción **falla** sin los datos obligatorios y que el
+mensaje lista los seis problemas sin imprimir ningún valor (ver §8). En v3 se había verificado además que
+las cabeceras de seguridad (CSP/HSTS/nosniff/Referrer-Policy/Permissions-Policy) aparecen en la respuesta de
+un build de producción real (`pnpm start`).
+
+`pnpm test:integration` (RLS/RPC/concurrencia/seña/agenda de sábado/validación de entrada) está escrito y
+actualizado para v3, pero **no se ejecutó** ni acá (sin Docker) ni contra el proyecto Supabase remoto: los
+tests crean usuarios admin, turnos y pagos sin limpiarlos, así que no deben apuntarse a una base real.
+Queda pendiente para GitHub Actions (job `db-and-e2e`, Docker + `supabase start`) o una máquina local con
+Docker Desktop. Hasta que corra en verde, las correcciones SQL de v3 están verificadas solo por inspección
+de catálogo (funciones, trigger y constraints existen en el remoto) y por los advisors de Supabase.
 
 ## 6. Qué cambió de v1 a v2 y por qué
 
@@ -257,3 +269,41 @@ decisión legal/fiscal del negocio:
 Quedó explícitamente fuera de esta ronda (ver §2 y la auditoría para el detalle): los textos legales
 definitivos, la identidad fiscal del responsable, la validación final del recargo, MFA para el login admin,
 activar Turnstile, y la política/prueba de backups y restauración.
+
+## 8. Qué cambió en v4 (2026-10-01) y por qué
+
+Ronda de cierre técnico. **No se tocó ningún texto legal** (`/privacidad` y `/terminos-de-reserva` siguen
+siendo placeholders `noindex`) y **no se habilitó ningún recargo** (`deposit.paymentOptions.enabled` sigue
+en `false`).
+
+- **Proyecto Supabase remoto existente.** Las 8 migraciones de `supabase/migrations/` están aplicadas en el
+  proyecto remoto y registradas en su historial. Además de las de v3 se agregaron dos migraciones chicas,
+  `20260101000007_fix_function_search_path.sql` y `20260101000008_fix_set_updated_at_search_path.sql`, que
+  fijan `search_path = ''` en `is_allowed_slot_time`, `max_active_per_day_for` y `set_updated_at`; con eso el
+  advisor de seguridad `function_search_path_mutable` quedó sin hallazgos. En `v3_hardening` se **conservó**
+  `business_settings.card_surcharge_percent` (en v3 se la eliminaba): ahora se agrega
+  `card_surcharge_options` en paralelo y la columna vieja se quitará en una migración futura, cuando se
+  confirme que la app ya usa la nueva. Los hallazgos de advisors que quedan son intencionales: RPC
+  `SECURITY DEFINER` expuestos a `anon`/`authenticated` (cada uno valida `is_admin()` o está acotado a lo
+  público) y `request_throttle` con RLS sin políticas (solo la toca `enforce_rate_limit`).
+- **Build gate de producción endurecido** (`lib/config/productionGate.ts`, llamado desde
+  `next.config.ts`, con tests unitarios). En producción el build falla salvo que: `NEXT_PUBLIC_SITE_URL`
+  sea `https://`; `NEXT_PUBLIC_SUPABASE_URL` sea `https://` y no apunte a un host local;
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY` estén definidas y no sean los valores de
+  desarrollo; `ADMIN_EMAIL_ALLOWLIST` tenga al menos un correo válido; y `RATE_LIMIT_HMAC_SECRET` no sea el
+  valor de desarrollo y tenga 32 caracteres o más. Los mensajes nombran la variable, nunca su valor.
+- **CI corregido** (`.github/workflows/ci.yml`): se eliminó `NEXT_PUBLIC_CARD_SURCHARGE_PERCENT` (variable
+  obsoleta desde v3, nada la lee) y se agregaron valores **no reales** para `ADMIN_EMAIL_ALLOWLIST`,
+  `RATE_LIMIT_HMAC_SECRET` y `SUPABASE_SERVICE_ROLE_KEY`. El job `quality` usa una URL Supabase `https://`
+  falsa (el build nunca se conecta); el job `db-and-e2e` sigue apuntando al stack local de Docker.
+- **Auditoría de secretos:** no hay archivos `.env*` (salvo `.env.example`, vacío de secretos) ni en el
+  árbol ni en el historial de git. Lo único que parece una credencial son dos JWT en
+  `supabase/tests/helpers.ts`: son las claves demo **públicas** de todo `supabase start` local
+  (`iss: supabase-demo`), válidas solo contra una instancia local. `.mcp.json` contiene únicamente el
+  identificador del proyecto Supabase (la autenticación del MCP es OAuth, no hay token). Se agregó
+  `.claude/settings.local.json` y `.kilo/worktrees/` a `.gitignore` para que la configuración local de
+  herramientas no se versione por accidente.
+- **`pnpm test:integration` queda para GitHub Actions** (Docker + `supabase start`), nunca contra la base
+  remota — ver §5.
+- **Un solo `.mcp.json` reformateado** (solo salto de línea final) porque `pnpm format:check` lo marcaba y
+  habría roto el job `quality` del CI.

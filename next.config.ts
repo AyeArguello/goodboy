@@ -1,43 +1,18 @@
 import type { NextConfig } from "next";
 import { assertProductionBusinessConfig } from "./lib/config/business";
+import { assertProductionEnv } from "./lib/config/productionGate";
 
 // Fails the build/boot loudly if NAP, WhatsApp, business hours, cancellation
-// policy or the production domain are still placeholders. See
-// docs/assumptions.md and lib/config/business.ts. Two more production-only
-// gates live here rather than inside lib/env/server.ts: that module carries
-// the `server-only` guard (correctly, since it's imported from actual server
-// code too), and Next's own config loader turns out to enforce that boundary
-// for next.config.ts as well — so these two checks read `process.env`
-// directly instead, duplicating a couple of lines of parsing rather than
-// importing the guarded module.
+// policy or the production domain are still placeholders (see
+// docs/assumptions.md and lib/config/business.ts), or if Supabase
+// URL/anon/service-role keys, the HTTPS domain, the admin allowlist or the
+// rate-limit HMAC secret are missing or still dev defaults. The secrets gate
+// lives in lib/config/productionGate.ts and takes a plain env object because
+// lib/env/server.ts carries the `server-only` guard, which Next's config
+// loader also enforces for next.config.ts.
 if (process.env.NODE_ENV === "production") {
   assertProductionBusinessConfig();
-
-  const problems: string[] = [];
-  const allowlist = (process.env.ADMIN_EMAIL_ALLOWLIST ?? "")
-    .split(",")
-    .map((e) => e.trim())
-    .filter(Boolean);
-  if (allowlist.length === 0) {
-    problems.push(
-      "ADMIN_EMAIL_ALLOWLIST está vacío (nadie podría entrar al panel).",
-    );
-  }
-  const rateLimitSecret =
-    process.env.RATE_LIMIT_HMAC_SECRET || "local-dev-hmac-secret";
-  if (rateLimitSecret === "local-dev-hmac-secret") {
-    problems.push(
-      "RATE_LIMIT_HMAC_SECRET sigue en el valor de desarrollo (rotar antes de producción).",
-    );
-  }
-  if (problems.length > 0) {
-    throw new Error(
-      [
-        "El build de producción se detuvo: faltan datos de configuración obligatorios.",
-        ...problems.map((p) => `  - ${p}`),
-      ].join("\n"),
-    );
-  }
+  assertProductionEnv(process.env);
 }
 
 const supabaseUrl =

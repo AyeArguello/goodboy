@@ -6,20 +6,26 @@ on:
   pull_request:
 
 env:
-  # Fake-but-valid values so the production business-config gate (see
-  # lib/config/business.ts) doesn't block the build check in CI. These are
-  # NOT real business data — see docs/assumptions.md for what's pending.
+  # Fake-but-valid values so the production gates (lib/config/business.ts and
+  # lib/config/productionGate.ts) don't block the build check in CI. NONE of
+  # these are real business data or real credentials — never put a real secret
+  # in this file. See docs/assumptions.md for what's pending.
   NEXT_PUBLIC_SITE_URL: https://ci-build.example.com
   NEXT_PUBLIC_LEGAL_ENTITY_NAME: "Razón social de ejemplo para CI"
   NEXT_PUBLIC_BUSINESS_CANCELLATION_POLICY_TEXT: "Texto de ejemplo para CI."
-  NEXT_PUBLIC_CARD_SURCHARGE_PERCENT: "10"
-  NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-key
+  ADMIN_EMAIL_ALLOWLIST: ci-admin@example.com
+  RATE_LIMIT_HMAC_SECRET: ci-not-a-real-hmac-secret-0123456789abcdef
+  SUPABASE_SERVICE_ROLE_KEY: ci-not-a-real-service-role-key
 
 jobs:
   quality:
     name: Typecheck, lint, unit tests, build
     runs-on: ubuntu-latest
+    env:
+      # The production gate requires an https, non-local Supabase URL; the
+      # build never connects to it.
+      NEXT_PUBLIC_SUPABASE_URL: https://ci-project.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-not-a-real-anon-key
     steps:
       - uses: actions/checkout@v4
 
@@ -42,6 +48,11 @@ jobs:
   db-and-e2e:
     name: Supabase RLS/RPC + Playwright smoke
     runs-on: ubuntu-latest
+    env:
+      # Points the app (next dev, used by Playwright) at the local Docker
+      # stack started below, not at a hosted project.
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-key
     steps:
       - uses: actions/checkout@v4
 

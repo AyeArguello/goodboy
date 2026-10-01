@@ -17,6 +17,45 @@ Proyecto revisado: `E:\Trabajo\Freelance\Good Boy\Page\good-boy`
 6. El código público de consulta tiene solo 4 caracteres y se genera con `random()` de PostgreSQL; debe reemplazarse por un token de mayor entropía.
 7. Faltan cabeceras HTTP de seguridad, MFA administrativo, política de retención/borrado y prueba real de RLS/RPC/concurrencia.
 
+## Estado de remediación (actualizado el 1 de octubre de 2026, ronda v4)
+
+La lista de arriba es el hallazgo original del 29/09/2026 y se conserva tal cual. El veredicto **sigue siendo
+"No publicar todavía"**, ahora solo por los puntos legales/fiscales y por la prueba de integración pendiente.
+Los bloqueos técnicos que no dependían de una decisión legal están corregidos:
+
+| #   | Hallazgo original                                 | Estado                                                                                                                                                                                                                                      |
+| --- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Páginas legales placeholder                       | **Abierto** (legal). No se tocaron en v4.                                                                                                                                                                                                   |
+| 2   | Identificación legal/fiscal del responsable       | **Abierto** (legal/contable).                                                                                                                                                                                                               |
+| 3   | Recargo 7% en una cuota (art. 37(c) Ley 25.065)   | **Suspendido, no resuelto.** `deposit.paymentOptions.enabled` es `false`: ninguna pantalla muestra ni cobra un recargo. Falta la revisión profesional para habilitarlo.                                                                     |
+| 4   | Cancelación del negocio marcaba la seña perdida   | **Corregido en v3** (`admin_cancel_appointment`; solo una cancelación iniciada por el cliente puede perder la seña) y aplicado al proyecto Supabase remoto. Falta la prueba de integración.                                                 |
+| 5   | RPC público sin validación                        | **Corregido en v3**: validación en `request_appointment` más `CHECK` constraints en `appointments` y `payments`, aplicados al remoto. Falta la prueba de integración.                                                                       |
+| 6   | Código de consulta de 4 caracteres con `random()` | **Mitigado, no equivale a lo pedido.** Ahora son 8 caracteres con `gen_random_bytes()` y rate limit por HMAC; se decidió mantener un código tipeable a mano en vez de 80–128 bits. Sigue siendo una decisión a revisar si se detecta abuso. |
+| 7   | Cabeceras, MFA, retención, prueba de RLS/RPC      | Cabeceras **corregidas en v3**. MFA, retención/DSAR y backups **abiertos**. Prueba de integración **pendiente** (ver abajo).                                                                                                                |
+
+Hallazgos técnicos P0/P1 de la sección "Hallazgos técnicos priorizados":
+
+- **P0.2 / P0.3 / P0.4:** ver filas 4, 5 y 6 de la tabla.
+- **P0.5 Build gate de secretos/configuración: corregido en v4.** En producción el build exige URL Supabase
+  `https://` no local, anon key, service role, dominio `https://`, allowlist con correos válidos y secreto
+  HMAC de 32+ caracteres; rechaza los valores `local-dev-*`. Ver `lib/config/productionGate.ts` y su test.
+  "Políticas aprobadas" sigue pendiente porque depende de los textos legales.
+- **P0.7 Integración Supabase real: pendiente.** `pnpm test:integration` no se ejecutó. No debe correr contra
+  el proyecto remoto (los tests crean usuarios, turnos y pagos y no los limpian); corresponde al job
+  `db-and-e2e` de GitHub Actions (Docker + `supabase start`) o a una máquina local con Docker.
+- **P1.1 Cabeceras HTTP: corregido en v3** (`next.config.ts`). CSP con `'unsafe-inline'`, no estricta.
+- **P1.3 Login admin server-side: corregido en v3** (allowlist antes de enviar el magic link, respuesta
+  uniforme, throttle).
+- **P1.4 Rate limiter privado: parcial.** La clave usa HMAC y se revocó `EXECUTE` de `PUBLIC` sobre
+  `enforce_rate_limit`. Sigue sin existir una limpieza de claves expiradas en `request_throttle`.
+- **P1.7 Hardening PostgreSQL: parcial.** v4 fijó `search_path = ''` en las tres funciones que no son
+  `SECURITY DEFINER` y el advisor `function_search_path_mutable` quedó sin hallazgos. Las funciones
+  `SECURITY DEFINER` mantienen `set search_path = public`; falta evaluar `search_path = ''` con nombres
+  calificados y revocar `CREATE` en `public`.
+- **Abiertos sin cambios:** P1.2 (MFA), P1.5 (retención y DSAR), P1.6 (backups), todo P2.
+
+El proyecto Supabase remoto **existe** y tiene aplicadas las 8 migraciones de `supabase/migrations/`.
+
 ## Controles ya correctos
 
 - RLS está activado en las ocho tablas y funciona deny-by-default.
@@ -184,6 +223,8 @@ Referencia oficial: [inscripción como monotributista](https://www.argentina.gob
 - Seña: transferencia **y** link de Mercado Pago.
 - Galería: 16 imágenes reales en `public/images/perros`.
 - Responsable comercial declarado: “Good Boy”, sin CUIT. Esto sigue bloqueado hasta identificar a la persona física y revisar situación fiscal.
+- Proyecto Supabase remoto: creado, con las 8 migraciones aplicadas (v4). Las claves todavía deben cargarse
+  como variables de entorno del hosting.
 - `NEXT_PUBLIC_DEPOSIT_DUE_HOURS`: pendiente.
 - Política de cancelación del negocio/fuerza mayor: pendiente.
 
@@ -194,13 +235,19 @@ Referencia oficial: [inscripción como monotributista](https://www.argentina.gob
 - [ ] Términos de reserva definitivos y versionados.
 - [ ] Política de reembolso/cancelación/fuerza mayor aprobada.
 - [ ] Derecho de revocación/“botón de arrepentimiento” revisado legalmente e implementado si corresponde.
-- [ ] 7% en una cuota eliminado o validado por profesional.
-- [ ] Bug de cancelación del negocio corregido y probado.
-- [ ] Límites/constraints y consentimiento validados dentro de PostgreSQL.
-- [ ] Token de consulta de estado endurecido.
-- [ ] Cabeceras CSP/HSTS y producción HTTPS.
-- [ ] MFA y protección anti-spam del login.
+- [x] 7% en una cuota eliminado o validado por profesional. _(Apagado: `enabled: false`, nada lo muestra ni
+      lo cobra. Sigue sin validación profesional; habilitarlo requiere esa revisión.)_
+- [ ] Bug de cancelación del negocio corregido y probado. _(Corregido en v3 y aplicado al remoto; falta la
+      prueba de integración.)_
+- [ ] Límites/constraints y consentimiento validados dentro de PostgreSQL. _(Implementados en v3 y aplicados
+      al remoto; falta la prueba de integración.)_
+- [ ] Token de consulta de estado endurecido. _(Mitigado a 8 caracteres criptográficos + rate limit por
+      HMAC; no alcanza los 80–128 bits recomendados — decisión a confirmar.)_
+- [x] Cabeceras CSP/HSTS y producción HTTPS. _(Cabeceras en `next.config.ts`; el build de producción exige
+      `NEXT_PUBLIC_SITE_URL` `https://`. Falta registrar el dominio real.)_
+- [ ] MFA y protección anti-spam del login. _(Anti-spam hecho en v3; MFA pendiente.)_
 - [ ] Retención, borrado, backups y respuesta a incidentes documentados.
 - [ ] Permisos de fotografías archivados.
-- [ ] `pnpm test:integration` aprobado contra Supabase real.
+- [ ] `pnpm test:integration` aprobado contra Supabase real. _(Pendiente: correr en GitHub Actions con
+      Docker o en local con Docker; nunca contra el proyecto remoto, porque los tests no limpian sus datos.)_
 - [ ] Revisión final de abogado/a y contador/a.

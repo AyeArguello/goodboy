@@ -42,6 +42,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local agent tooling (per-machine permissions and worktrees)
+.claude/settings.local.json
+.kilo/worktrees/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -47,7 +47,8 @@ pnpm format / format:check
 pnpm test             # vitest — unidad (reglas de negocio, dominio, UI)
 pnpm test:integration # RLS + RPC transaccional + concurrencia, contra Supabase local
 pnpm test:e2e         # Playwright — flujos completos
-pnpm build            # next build — falla si faltan NAP/WhatsApp/horario/dominio (ver lib/config/business.ts)
+pnpm build            # next build — en producción falla si faltan NAP/WhatsApp/horario/dominio (lib/config/business.ts)
+                      # o Supabase URL/claves, dominio https, allowlist admin y secreto HMAC (lib/config/productionGate.ts)
 ```
 
 ## Migraciones y seed
@@ -94,7 +95,7 @@ celular.
 | `pnpm test`             | Reglas de negocio (24 h, 3/día, código, teléfono, WhatsApp, zona horaria), UI | Nada                                |
 | `pnpm test:integration` | RLS, RPC transaccional, concurrencia (dos reservas al mismo slot)             | `pnpm supabase:start` (Docker)      |
 | `pnpm test:e2e`         | Flujos completos, teclado, mobile, redirect de `/admin` sin sesión            | Nada (levanta su propio `next dev`) |
-| `pnpm build` (prod env) | Que el build falle si faltan NAP/WhatsApp/horario/dominio                     | Variables de entorno de producción  |
+| `pnpm build` (prod env) | Que el build falle si faltan datos de negocio, claves Supabase o secretos     | Variables de entorno de producción  |
 
 ## Limitaciones conocidas de este entorno de desarrollo
 
