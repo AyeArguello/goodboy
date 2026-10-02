@@ -1465,3 +1465,38 @@ begin
   where a.code = upper(trim(p_code));
 end;
 $$;
+
+-- ---------------------------------------------------------------------------
+-- Fix: enforce_rate_limit read the throttle row and then inserted it when
+-- missing, so two concurrent first calls for the same key both inserted and
+-- one died with a raw unique violation (request_throttle_pkey). The insert is
+-- now the first step and ignores the conflict; the row is then locked and
+-- evaluated exactly as before. Signature and grants are unchanged.
+-- ---------------------------------------------------------------------------
+create or replace function enforce_rate_limit(p_key text, p_max_per_window int, p_window interval)
+returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  v_row request_throttle%rowtype;
+begin
+  insert into request_throttle (key, window_start, count)
+  values (p_key, now(), 1)
+  on conflict (key) do nothing;
+  if found then
+    return;
+  end if;
+
+  select * into v_row from request_throttle where key = p_key for update;
+
+  if now() - v_row.window_start > p_window then
+    update request_throttle set window_start = now(), count = 1 where key = p_key;
+    return;
+  end if;
+
+  if v_row.count >= p_max_per_window then
+    raise exception 'RATE_LIMITED' using errcode = 'P0001';
+  end if;
+
+  update request_throttle set count = v_row.count + 1 where key = p_key;
+end;
+$$;
