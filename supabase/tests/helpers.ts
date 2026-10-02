@@ -12,6 +12,29 @@ const SERVICE_ROLE_KEY =
   process.env.SUPABASE_TEST_SERVICE_ROLE_KEY ??
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
 
+const LOCAL_HOSTNAMES = new Set(["127.0.0.1", "localhost"]);
+
+/**
+ * SAFETY GUARD. This suite creates users, slots, appointments and payments
+ * with the service role, and `resetTestData()` DELETES whole tables. It must
+ * only ever run against a disposable local stack (`pnpm supabase:start`), so
+ * this throws unless the URL's hostname is exactly 127.0.0.1 or localhost.
+ * Never point SUPABASE_TEST_URL at a hosted project.
+ */
+export function assertLocalSupabaseUrl(url: string = SUPABASE_URL): void {
+  let hostname: string;
+  try {
+    hostname = new URL(url).hostname;
+  } catch {
+    throw new Error("Integration tests: SUPABASE_TEST_URL is not a valid URL.");
+  }
+  if (!LOCAL_HOSTNAMES.has(hostname)) {
+    throw new Error(
+      `Integration tests refuse to run against "${hostname}": only 127.0.0.1 or localhost (a local Docker Supabase stack) is allowed.`,
+    );
+  }
+}
+
 export function anonClient() {
   return createClient(SUPABASE_URL, ANON_KEY, {
     auth: { persistSession: false },
@@ -19,9 +42,42 @@ export function anonClient() {
 }
 
 export function serviceClient() {
+  assertLocalSupabaseUrl();
   return createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { persistSession: false },
   });
+}
+
+const NO_MATCH_UUID = "00000000-0000-0000-0000-000000000000";
+
+/**
+ * Deletes all test data, children before parents, using the service role.
+ * Runs before every test (see ./setup.ts) so tests don't depend on each
+ * other's leftovers or on the shared "unknown" rate-limit key. Deliberately
+ * leaves `admin_profiles` (and `business_settings`) alone: the admin client
+ * created in a suite's `beforeAll` must stay authorized.
+ *
+ * LOCAL ONLY — refuses to run unless the target is 127.0.0.1/localhost.
+ */
+export async function resetTestData(): Promise<void> {
+  assertLocalSupabaseUrl();
+  const svc = serviceClient();
+  const tables = [
+    ["appointment_events", "id", NO_MATCH_UUID],
+    ["payments", "id", NO_MATCH_UUID],
+    ["appointments", "id", NO_MATCH_UUID],
+    ["availability_slots", "id", NO_MATCH_UUID],
+    ["blocked_dates", "id", NO_MATCH_UUID],
+    ["request_throttle", "key", ""],
+  ] as const;
+  for (const [table, column, noMatch] of tables) {
+    const { error } = await svc.from(table).delete().neq(column, noMatch);
+    if (error) {
+      throw new Error(
+        `resetTestData: could not clear ${table}: ${error.message}`,
+      );
+    }
+  }
 }
 
 let adminCounter = 0;

@@ -41,7 +41,8 @@ Hallazgos técnicos P0/P1 de la sección "Hallazgos técnicos priorizados":
   HMAC de 32+ caracteres; rechaza los valores `local-dev-*`. Ver `lib/config/productionGate.ts` y su test.
   "Políticas aprobadas" sigue pendiente porque depende de los textos legales.
 - **P0.7 Integración Supabase real: pendiente.** `pnpm test:integration` no se ejecutó. No debe correr contra
-  el proyecto remoto (los tests crean usuarios, turnos y pagos y no los limpian); corresponde al job
+  el proyecto remoto (los tests crean datos y borran tablas enteras antes de cada test; el helper solo
+  acepta `127.0.0.1`/`localhost`); corresponde al job
   `db-and-e2e` de GitHub Actions (Docker + `supabase start`) o a una máquina local con Docker.
 - **P1.1 Cabeceras HTTP: corregido en v3** (`next.config.ts`). CSP con `'unsafe-inline'`, no estricta.
 - **P1.3 Login admin server-side: corregido en v3** (allowlist antes de enviar el magic link, respuesta
@@ -249,5 +250,5 @@ Referencia oficial: [inscripción como monotributista](https://www.argentina.gob
 - [ ] Retención, borrado, backups y respuesta a incidentes documentados.
 - [ ] Permisos de fotografías archivados.
 - [ ] `pnpm test:integration` aprobado contra Supabase real. _(Pendiente: correr en GitHub Actions con
-      Docker o en local con Docker; nunca contra el proyecto remoto, porque los tests no limpian sus datos.)_
+      Docker o en local con Docker; nunca contra el proyecto remoto, porque los tests borran tablas.)_
 - [ ] Revisión final de abogado/a y contador/a.

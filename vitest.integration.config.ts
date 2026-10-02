@@ -17,6 +17,10 @@ export default defineConfig({
     environment: "node",
     globals: true,
     include: ["supabase/tests/**/*.integration.test.ts"],
+    setupFiles: ["./supabase/tests/setup.ts"],
+    // Every test file shares one database and resetTestData() wipes it before
+    // each test, so files must not run in parallel.
+    fileParallelism: false,
     testTimeout: 20_000,
     hookTimeout: 20_000,
   },

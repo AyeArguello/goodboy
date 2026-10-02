@@ -55,15 +55,20 @@ describe("request_appointment", () => {
   it("rejects a slot on a blocked date", async () => {
     const svc = serviceClient();
     const startsAt = nextValidSlotStartsAt(72);
-    const { data: slot } = await svc
+    const { data: slot, error: slotError } = await svc
       .from("availability_slots")
       .insert({ starts_at: startsAt, is_published: true })
       .select("id")
       .single();
-    await svc.rpc("admin_block_date", {
-      p_date: startsAt.slice(0, 10),
-      p_reason: "test",
-    });
+    expect(slotError).toBeNull();
+
+    // Inserted directly: admin_block_date requires an authenticated admin
+    // (auth.uid()), which the service role is not. The grid times are all
+    // mid-day in Cordoba, so the UTC date prefix is also the local date.
+    const { error: blockError } = await svc
+      .from("blocked_dates")
+      .insert({ blocked_date: startsAt.slice(0, 10), reason: "test" });
+    expect(blockError).toBeNull();
 
     const anon = anonClient();
     const { error } = await anon.rpc(

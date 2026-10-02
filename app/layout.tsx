@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { Montserrat, Nunito_Sans } from "next/font/google";
 import { businessConfig, siteUrl } from "@/lib/config/business";
 import "./globals.css";
@@ -32,7 +33,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="es"

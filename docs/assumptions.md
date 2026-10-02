@@ -197,7 +197,8 @@ un build de producción real (`pnpm start`).
 
 `pnpm test:integration` (RLS/RPC/concurrencia/seña/agenda de sábado/validación de entrada) está escrito y
 actualizado para v3, pero **no se ejecutó** ni acá (sin Docker) ni contra el proyecto Supabase remoto: los
-tests crean usuarios admin, turnos y pagos sin limpiarlos, así que no deben apuntarse a una base real.
+tests crean usuarios admin, turnos y pagos y borran tablas enteras antes de cada test, así que solo pueden
+correr contra un stack local (el helper se niega a ejecutarse si la URL no es `127.0.0.1`/`localhost`).
 Queda pendiente para GitHub Actions (job `db-and-e2e`, Docker + `supabase start`) o una máquina local con
 Docker Desktop. Hasta que corra en verde, las correcciones SQL de v3 están verificadas solo por inspección
 de catálogo (funciones, trigger y constraints existen en el remoto) y por los advisors de Supabase.
