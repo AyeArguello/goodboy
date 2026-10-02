@@ -5,7 +5,7 @@ const SUPABASE_URL = process.env.SUPABASE_TEST_URL ?? "http://127.0.0.1:54321";
 // These are the well-known, publicly documented demo JWTs that `supabase
 // start` prints for every local stack — not a secret, and only valid
 // against a local instance. Override via env if your local setup differs.
-const ANON_KEY =
+export const ANON_KEY =
   process.env.SUPABASE_TEST_ANON_KEY ??
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0";
 const SERVICE_ROLE_KEY =
@@ -50,6 +50,36 @@ export function serviceClient() {
 
 const NO_MATCH_UUID = "00000000-0000-0000-0000-000000000000";
 
+export const RECEIPTS_BUCKET = "payment-receipts";
+
+/**
+ * `supabase start` creates the bucket from supabase/config.toml; this makes
+ * the suite independent of that (and of migration/storage start-up order).
+ */
+export async function ensureReceiptsBucket(
+  svc: ReturnType<typeof serviceClient> = serviceClient(),
+): Promise<void> {
+  const { data } = await svc.storage.getBucket(RECEIPTS_BUCKET);
+  if (data) return;
+  const { error } = await svc.storage.createBucket(RECEIPTS_BUCKET, {
+    public: false,
+    fileSizeLimit: 5 * 1024 * 1024,
+    allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
+  });
+  if (error && !/already exists/i.test(error.message)) throw error;
+}
+
+/** Removes every object the previous test left in the (local) receipts bucket. */
+async function emptyReceiptsBucket(
+  svc: ReturnType<typeof serviceClient>,
+): Promise<void> {
+  const { data } = await svc.storage
+    .from(RECEIPTS_BUCKET)
+    .list("r", { limit: 1000 });
+  const paths = (data ?? []).map((o) => `r/${o.name}`);
+  if (paths.length > 0) await svc.storage.from(RECEIPTS_BUCKET).remove(paths);
+}
+
 /**
  * Deletes all test data, children before parents, using the service role.
  * Runs before every test (see ./setup.ts) so tests don't depend on each
@@ -62,7 +92,13 @@ const NO_MATCH_UUID = "00000000-0000-0000-0000-000000000000";
 export async function resetTestData(): Promise<void> {
   assertLocalSupabaseUrl();
   const svc = serviceClient();
+  await ensureReceiptsBucket(svc);
+  await emptyReceiptsBucket(svc);
   const tables = [
+    ["email_outbox", "id", NO_MATCH_UUID],
+    ["receipt_purge_runs", "id", NO_MATCH_UUID],
+    ["payment_receipts", "id", NO_MATCH_UUID],
+    ["payment_upload_tokens", "id", NO_MATCH_UUID],
     ["appointment_events", "id", NO_MATCH_UUID],
     ["payments", "id", NO_MATCH_UUID],
     ["appointments", "id", NO_MATCH_UUID],
@@ -280,7 +316,7 @@ export const validAppointmentPayload = (slotId: string) => ({
   p_pickup_address: null,
   p_owner_name: "Tester",
   p_phone_e164: "+5493511234567",
-  p_email: null,
+  p_email: "tester@example.com",
   p_consents: [
     {
       key: "orientative_price",

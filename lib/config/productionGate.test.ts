@@ -11,6 +11,10 @@ const validEnv = {
   SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key-not-real",
   ADMIN_EMAIL_ALLOWLIST: "owner@example.com",
   RATE_LIMIT_HMAC_SECRET: "test-hmac-secret-not-real-0123456789abcdef",
+  RESEND_API_KEY: "re_test_not_real",
+  RESEND_FROM_EMAIL: "turnos@example.com",
+  OWNER_NOTIFICATION_EMAIL: "owner@example.com",
+  DEPOSIT_TRANSFER_ALIAS: "good.boy.test",
 };
 
 function problemsWith(overrides: Record<string, string | undefined>) {
@@ -49,6 +53,13 @@ describe("collectProductionEnvProblems", () => {
     ["RATE_LIMIT_HMAC_SECRET", undefined],
     ["RATE_LIMIT_HMAC_SECRET", "local-dev-hmac-secret"],
     ["RATE_LIMIT_HMAC_SECRET", "too-short"],
+    ["RESEND_API_KEY", undefined],
+    ["RESEND_FROM_EMAIL", undefined],
+    ["RESEND_FROM_EMAIL", "not-an-email"],
+    ["OWNER_NOTIFICATION_EMAIL", undefined],
+    ["OWNER_NOTIFICATION_EMAIL", "nope"],
+    ["DEPOSIT_TRANSFER_ALIAS", undefined],
+    ["DEPOSIT_TRANSFER_ALIAS", "   "],
   ])("rejects %s = %s", (name, value) => {
     const problems = problemsWith({ [name]: value });
     expect(problems).toHaveLength(1);
@@ -56,7 +67,7 @@ describe("collectProductionEnvProblems", () => {
   });
 
   it("reports every problem at once when nothing is configured", () => {
-    expect(collectProductionEnvProblems({})).toHaveLength(6);
+    expect(collectProductionEnvProblems({})).toHaveLength(10);
   });
 
   it("never leaks a secret value in the error message", () => {

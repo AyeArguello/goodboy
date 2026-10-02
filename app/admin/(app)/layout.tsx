@@ -6,6 +6,7 @@ import {
   expireOverdueDeposits,
   getAdminSession,
   getPendingCount,
+  getPendingReceiptsCount,
 } from "@/lib/data/admin";
 
 export const metadata: Metadata = {
@@ -25,7 +26,17 @@ export default async function AdminAppLayout({
   // expiration check — see docs/assumptions.md §3.
   await expireOverdueDeposits();
 
-  const pendingCount = await getPendingCount();
+  const [pendingCount, pendingReceiptsCount] = await Promise.all([
+    getPendingCount(),
+    getPendingReceiptsCount(),
+  ]);
 
-  return <AdminShell pendingCount={pendingCount}>{children}</AdminShell>;
+  return (
+    <AdminShell
+      pendingCount={pendingCount}
+      pendingReceiptsCount={pendingReceiptsCount}
+    >
+      {children}
+    </AdminShell>
+  );
 }

@@ -7,7 +7,8 @@ confirma datos de negocio que antes estaban pendientes y agrega un requisito nue
 verificación manual** — que cambia la máquina de estados de las citas. **Actualización v3 (2026-09-29):**
 llegaron `docs/plan-web-good-boy.md` (confirma dominio, correo admin y una grilla de sábado separada de la
 de lunes a viernes) y `docs/auditoria-seguridad-y-cumplimiento-good-boy.md` (auditoría legal/técnica con
-bloqueos P0, incluido un bug real de cancelación). **Actualización v4 (2026-10-01):** ronda de cierre técnico
+bloqueos P0, incluido un bug real de cancelación). **Actualización v5 (2026-10-02):** flujo definitivo de seña por **transferencia manual con comprobante**
+(sin Mercado Pago ni WhatsApp automático) — ver §9. **Actualización v4 (2026-10-01):** ronda de cierre técnico
 (proyecto Supabase remoto creado con las migraciones aplicadas, build gate de secretos, CI corregido,
 auditoría de secretos); los textos legales **no** se tocaron. La sección 6 explica v1→v2; la sección 7
 explica puntualmente qué cambió en v3 y por qué; la sección 8, v4.
@@ -308,3 +309,47 @@ en `false`).
   remota — ver §5.
 - **Un solo `.mcp.json` reformateado** (solo salto de línea final) porque `pnpm format:check` lo marcaba y
   habría roto el job `quality` del CI.
+
+## 9. Flujo de seña con comprobante (v5, 2026-10-02)
+
+**Alcance cerrado:** sin integración de Mercado Pago ni de la API de WhatsApp Business, sin pagos
+automáticos y sin links de pago ni tarjetas en la web. `deposit.paymentOptions` sigue `enabled: false` y
+`card_surcharge_percent`/`card_surcharge_options` no se tocaron.
+
+- **Estados:** `pending_review` → (aprobar) `awaiting_deposit` + plazo → el cliente sube el comprobante →
+  `payment_receipts.status = pending_verification` → la dueña confirma (`confirmed`, un único pago
+  verificado) o rechaza con motivo obligatorio (sigue `awaiting_deposit` y recibe un enlace nuevo). Un
+  comprobante **nunca** confirma el turno por sí solo.
+- **Correo obligatorio** al pedir turno (validado en la web, en la acción y en la base).
+- **Enlace de carga:** token de 256 bits, solo se guarda el hash, atado al turno, de un solo uso, vence con
+  `deposit_due_at`, se invalida al confirmar/vencer/cancelar y tiene rate limit. El archivo viaja directo a
+  Storage por una URL firmada (no pasa por el límite de cuerpo de la función serverless) y el servidor
+  verifica los **bytes reales** (JPEG/PNG/WebP) antes de registrarlo; lo que no pasa se borra.
+- **Storage:** bucket privado `payment-receipts`, nombres aleatorios (`r/<uuid>.<ext>`), sin políticas sobre
+  `storage.objects`; solo el servidor (service role) firma URLs de 60 s tras verificar que quien pide es
+  admin.
+- **Emails** (Resend vía `email_outbox`): solicitud recibida, aprobación + instrucciones, comprobante
+  recibido, comprobante rechazado, turno confirmado/cancelado/reprogramado, devolución. Idempotentes y
+  reintentables; un fallo nunca revierte la transición.
+- **Retención/purga:** ver README. Tras borrar el archivo se conserva importe, medio, referencia, fecha,
+  quién verificó y cuándo, estado del pago y devolución.
+- **Vencimiento con comprobante pendiente (confirmado):** el horario queda reservado, y la solicitud no
+  expira, mientras haya un comprobante `pending_verification` que **se cargó con un enlace válido, dentro
+  de `deposit_due_at`, y que pasó la validación del contenido real y quedó registrado**. Un archivo
+  incompleto, inválido o abandonado no crea ningún registro y no bloquea nada (los huérfanos los barre la
+  purga). La base lo exige (`appointment_holds_slot` y los barridos comparan `uploaded_at <= deposit_due_at`).
+  El panel lo muestra como **"Verificación vencida"** y lo ordena primero; nunca se confirma solo.
+- **Rechazo después del vencimiento:** no hay enlace de reemplazo; la solicitud expira en el próximo barrido
+  y la administradora debe **reactivarla** ("Reactivar y pedir seña de nuevo") para emitir un enlace nuevo.
+- **Referencia de la transferencia:** opcional para el cliente; la administradora puede completarla al
+  verificar.
+
+**Datos que siguen pendientes de la dueña (bloquean producción; el build falla sin ellos):**
+`DEPOSIT_TRANSFER_ALIAS` (y opcionalmente titular y CBU/CVU), `RESEND_API_KEY`, `RESEND_FROM_EMAIL` y
+`OWNER_NOTIFICATION_EMAIL`. Además: programar la purga diaria en el proyecto (ver README) y confirmar la
+decisión de vencimiento de arriba.
+
+**Verificación de esta ronda:** el SQL de la migración `payment_receipts_flow` se probó localmente en
+PGlite (118 escenarios). Las pruebas de integración con Storage real, la Edge Function (servida con
+`supabase functions serve` en Deno) y el recorrido E2E completo corren solo en CI (Docker); el workflow
+falla si algún test queda omitido y publica los conteos exactos como anotaciones.

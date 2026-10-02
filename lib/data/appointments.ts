@@ -1,7 +1,6 @@
 import "server-only";
-import { headers } from "next/headers";
 import { getPublicSupabaseClient } from "@/lib/supabase/public";
-import { hashClientKey } from "@/lib/security/rateLimitKey";
+import { getClientKey } from "@/lib/security/clientKey";
 import type {
   CoatState,
   ConsentRecord,
@@ -10,20 +9,6 @@ import type {
   SizeBucket,
 } from "@/lib/domain/appointment";
 import { parseBookingErrorCode } from "@/lib/domain/appointment";
-
-/**
- * Best-effort caller identity for rate limiting — never used for anything
- * security-critical beyond that. HMACed before it ever leaves this process,
- * so the raw IP never reaches the database (see lib/security/rateLimitKey.ts).
- */
-async function getClientKey(): Promise<string> {
-  const h = await headers();
-  const raw =
-    h.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    h.get("x-real-ip") ??
-    "unknown";
-  return hashClientKey(raw);
-}
 
 export interface BookAppointmentInput {
   slotId: string;
@@ -116,4 +101,25 @@ export async function lookupAppointmentStatus(
     depositAmountArs: Number(data[0].deposit_amount_ars),
     depositDueAt: (data[0].deposit_due_at as string | null) ?? null,
   };
+}
+
+export type ReceiptState =
+  "none" | "pending_verification" | "verified" | "rejected";
+
+/** Whether a receipt is waiting / verified / rejected for this code — nothing personal. */
+export async function lookupReceiptState(code: string): Promise<ReceiptState> {
+  const supabase = getPublicSupabaseClient();
+  const clientKey = await getClientKey();
+
+  const { data, error } = await supabase.rpc("get_appointment_receipt_status", {
+    p_code: code,
+    p_client_key: clientKey,
+  });
+  const state = data?.[0]?.receipt_state as string | undefined;
+  if (error || !state) return "none";
+  return state === "pending_verification" ||
+    state === "verified" ||
+    state === "rejected"
+    ? state
+    : "none";
 }

@@ -5,13 +5,18 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Toast } from "@/components/ui/Toast";
-import { SERVICE_PACKAGE_LABELS, SIZE_LABELS } from "@/lib/domain/appointment";
+import {
+  SERVICE_PACKAGE_LABELS,
+  SIZE_LABELS,
+  receiptDisplay,
+} from "@/lib/domain/appointment";
 import { formatDayLabel, formatTimeLabel } from "@/lib/domain/datetime";
 import type { AppointmentRow, RequestsFilter } from "@/lib/data/admin";
 import { approveRequest } from "@/app/admin/(app)/actions";
 
 const FILTERS: { key: RequestsFilter; label: string }[] = [
   { key: "pending_review", label: "Por revisar" },
+  { key: "receipts", label: "Comprobantes" },
   { key: "awaiting_deposit", label: "Esperando seña" },
   { key: "confirmed", label: "Confirmadas" },
   { key: "all", label: "Todas" },
@@ -21,23 +26,30 @@ export function RequestsList({
   appointments,
   filter,
   pendingCount,
+  receiptsCount,
 }: {
   appointments: AppointmentRow[];
   filter: RequestsFilter;
   pendingCount: number;
+  receiptsCount: number;
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [toast, setToast] = useState<string | null>(null);
+  const [now] = useState(() => new Date());
 
   function approve(a: AppointmentRow) {
     startTransition(async () => {
       const result = await approveRequest(a.id);
       if (result.ok) {
         setToast(
-          `Solicitud de ${a.dogName} aprobada. Mandale los datos para la seña por WhatsApp.`,
+          result.emailStatus === "failed"
+            ? `Solicitud de ${a.dogName} aprobada, pero el email al cliente falló: reintentalo desde la ficha (Historial).`
+            : `Solicitud de ${a.dogName} aprobada. Le mandamos por email los datos de la seña y el enlace para subir el comprobante.`,
         );
         router.refresh();
+      } else {
+        setToast(result.error);
       }
     });
   }
@@ -63,6 +75,7 @@ export function RequestsList({
           >
             {f.label}
             {f.key === "pending_review" ? ` (${pendingCount})` : ""}
+            {f.key === "receipts" ? ` (${receiptsCount})` : ""}
           </Link>
         ))}
       </div>
@@ -92,7 +105,32 @@ export function RequestsList({
                       {formatDayLabel(startsAt)} · {formatTimeLabel(startsAt)}
                     </span>
                   </span>
-                  <StatusBadge status={a.status} />
+                  <span className="flex flex-col items-end gap-1">
+                    <StatusBadge status={a.status} />
+                    {a.receipts.some(
+                      (r) => r.status === "pending_verification",
+                    ) ? (
+                      <span
+                        className={`font-heading rounded-full border-[1.5px] px-2.5 py-0.5 text-xs font-bold ${
+                          receiptDisplay(
+                            "pending_verification",
+                            a.depositDueAt,
+                            now,
+                          ).tone === "overdue"
+                            ? "border-error bg-error-bg text-error"
+                            : "border-warning-line bg-warning-bg text-warning"
+                        }`}
+                      >
+                        {
+                          receiptDisplay(
+                            "pending_verification",
+                            a.depositDueAt,
+                            now,
+                          ).label
+                        }
+                      </span>
+                    ) : null}
+                  </span>
                 </div>
                 <span className="text-ink-soft text-[15px]">
                   {SIZE_LABELS[a.sizeBucket]} ·{" "}

@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin", "/turnos/estado"],
+        disallow: ["/admin", "/turnos/estado", "/turnos/comprobante"],
       },
     ],
     sitemap: `${siteUrl()}/sitemap.xml`,

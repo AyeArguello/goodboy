@@ -75,10 +75,10 @@ begin
 
   insert into appointments (
     code, slot_id, dog_name, size_bucket, breed, coat_state, service_package, notes,
-    logistics_mode, owner_name, phone_e164, status
+    logistics_mode, owner_name, phone_e164, email, status
   ) values (
     'GB-2H6D7X9K', v_slot_today_1, 'Toby', 'pequeno', 'Caniche', 'largo', 'crecimiento_continuo',
-    'Primera vez con corte.', 'self', 'Marcela', '+5493510000001', 'confirmed'
+    'Primera vez con corte.', 'self', 'Marcela', '+5493510000001', 'cliente1@example.com', 'confirmed'
   ) returning id into v_appt_id;
   insert into payments (appointment_id, amount_ars, method, status, verified_at)
   values (v_appt_id, 20000, 'bank_transfer', 'verified', now() - interval '1 day');
@@ -89,10 +89,10 @@ begin
 
     insert into appointments (
       code, slot_id, dog_name, size_bucket, breed, coat_state, service_package, notes,
-      logistics_mode, neighborhood, pickup_address, owner_name, phone_e164, status
+      logistics_mode, neighborhood, pickup_address, owner_name, phone_e164, email, status
     ) values (
       'GB-8F2NQR4M', v_slot_today_2, 'Mora', 'grande', 'Golden', 'con_nudos', 'corto_doble_capa', null,
-      'pickup', 'Las Palmas', 'Calle de ejemplo 000', 'Diego', '+5493510000002', 'confirmed'
+      'pickup', 'Las Palmas', 'Calle de ejemplo 000', 'Diego', '+5493510000002', 'cliente2@example.com', 'confirmed'
     ) returning id into v_appt_id;
     insert into payments (appointment_id, amount_ars, method, status, verified_at)
     values (v_appt_id, 20000, 'mercadopago_link', 'verified', now() - interval '1 day');
@@ -100,29 +100,29 @@ begin
 
   insert into appointments (
     code, slot_id, dog_name, size_bucket, breed, coat_state, service_package, notes,
-    logistics_mode, neighborhood, pickup_address, owner_name, phone_e164, status, deposit_due_at
+    logistics_mode, neighborhood, pickup_address, owner_name, phone_e164, email, status, deposit_due_at
   ) values (
     'GB-7K4QW2ZP', v_slot_wed, 'Luna', 'mediano', 'Mestiza', 'largo', 'crecimiento_continuo',
     'Le molesta el secador fuerte.',
-    'pickup', 'Las Palmas', 'Calle de ejemplo 111', 'Carolina', '+5493510000003',
+    'pickup', 'Las Palmas', 'Calle de ejemplo 111', 'Carolina', '+5493510000003', 'cliente3@example.com',
     'awaiting_deposit', now() + interval '20 hours'
   );
 
   insert into appointments (
     code, slot_id, dog_name, size_bucket, breed, coat_state, service_package, notes,
-    logistics_mode, owner_name, phone_e164, status
+    logistics_mode, owner_name, phone_e164, email, status
   ) values (
     'GB-3M8PX7YN', v_slot_thu, 'Rocco', 'grande', 'Ovejero', 'corto', 'corto_doble_capa', null,
-    'self', 'Pablo', '+5493510000004', 'pending_review'
+    'self', 'Pablo', '+5493510000004', 'cliente4@example.com', 'pending_review'
   );
 
   insert into appointments (
     code, slot_id, dog_name, size_bucket, breed, coat_state, service_package, notes,
-    logistics_mode, neighborhood, pickup_address, owner_name, phone_e164, status
+    logistics_mode, neighborhood, pickup_address, owner_name, phone_e164, email, status
   ) values (
     'GB-5Q1TK8DH', v_slot_fri, 'Nina', 'pequeno', 'Yorkshire', 'no_se', 'crecimiento_continuo',
     'Es miedosa con extraños.',
-    'pickup', '[barrio de ejemplo]', 'Calle de ejemplo 222', 'Sofía', '+5493510000005',
+    'pickup', '[barrio de ejemplo]', 'Calle de ejemplo 222', 'Sofía', '+5493510000005', 'cliente5@example.com',
     'cancelled_by_client'
   );
 end $$;

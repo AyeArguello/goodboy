@@ -27,12 +27,31 @@ export default function TerminosDeReservaPage() {
           </li>
           <li>
             Toda solicitud queda pendiente de revisión hasta que la dueña la
-            aprueba.
+            aprueba. Te avisamos por email.
           </li>
           <li>
             Para confirmar un turno aprobado se requiere una seña de ARS{" "}
             {businessConfig.deposit.amountArs.toLocaleString("es-AR")}, que se
             descuenta del total del servicio.
+          </li>
+          <li>
+            La seña se paga únicamente por transferencia bancaria. Cuando
+            aprobamos tu solicitud te mandamos por email los datos para
+            transferir y un enlace personal para subir una foto o captura del
+            comprobante dentro del plazo indicado.
+          </li>
+          <li>
+            Verificamos cada comprobante a mano. El turno queda confirmado
+            recién cuando lo verificamos y te avisamos por email; subir el
+            comprobante no lo confirma por sí solo.
+          </li>
+          <li>
+            Si no podemos verificar el comprobante, te explicamos el motivo por
+            email y podés subir uno nuevo dentro del plazo.
+          </li>
+          <li>
+            Si el plazo vence sin un comprobante válido, la solicitud vence y el
+            horario vuelve a estar disponible.
           </li>
           <li>{businessConfig.cancellationPolicyText}</li>
           <li>
@@ -40,13 +59,33 @@ export default function TerminosDeReservaPage() {
             al recibir al perro.
           </li>
           <li>
-            {businessConfig.deposit.paymentOptions.enabled
-              ? "Pagos con tarjeta vía Mercado Pago tienen un recargo según la cantidad de cuotas, informado antes de pagar."
-              : "Por ahora no se cobra ningún recargo por pagar con tarjeta — esa opción está en revisión y no está habilitada."}
+            No se cobra ningún recargo por pagar la seña. No ofrecemos pagos con
+            tarjeta ni por plataformas de pago dentro de la web.
           </li>
           <li>{businessConfig.businessCancellationPolicyText}</li>
         </ul>
       </div>
+
+      <section
+        aria-labelledby="comprobante-datos"
+        className="flex flex-col gap-2"
+      >
+        <h2
+          id="comprobante-datos"
+          className="font-heading m-0 text-xl font-bold"
+        >
+          Sobre el comprobante que subís
+        </h2>
+        <p className="text-ink-soft m-0">
+          Se usa solo para verificar la seña, lo ven únicamente las personas
+          administradoras y se guarda en un almacenamiento privado. Se elimina
+          automáticamente: 7 días después de rechazado o de que la solicitud
+          venza, y 30 días después del cierre del turno. Si hay un reclamo o una
+          devolución pendiente, la eliminación se suspende y, al resolverse, se
+          conserva hasta 180 días más. Podés pedir acceso o supresión según se
+          explica en la <a href="/privacidad">política de privacidad</a>.
+        </p>
+      </section>
     </main>
   );
 }

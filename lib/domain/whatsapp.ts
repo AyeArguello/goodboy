@@ -33,6 +33,34 @@ export function customerSummaryMessage(input: {
 }
 
 /**
+ * Message the admin can open in WhatsApp once a deposit is confirmed. It is
+ * only a prefilled link: nothing is sent until the admin taps send, and the
+ * app never claims it was sent — only that the link was opened.
+ */
+export function depositConfirmationMessage(input: {
+  ownerName: string;
+  dogName: string;
+  when: string;
+  pickup: boolean;
+  neighborhood: string | null;
+  depositAmountArs: number;
+  /** Orientative price range for the dog's size, e.g. "30.000–40.000". */
+  priceRange: string;
+  cancellationPolicy: string;
+}): string {
+  return [
+    `Hola ${input.ownerName}, confirmamos el turno de ${input.dogName}.`,
+    `Cuándo: ${input.when}`,
+    input.pickup
+      ? `Modalidad: lo buscamos${input.neighborhood ? ` (${input.neighborhood})` : ""}; el costo del traslado se confirma según el barrio.`
+      : "Modalidad: lo traés vos al local.",
+    `Seña recibida: ARS ${input.depositAmountArs.toLocaleString("es-AR")}.`,
+    `Saldo: se confirma el día del turno al evaluar a ${input.dogName} (precio orientativo ARS ${input.priceRange}, menos la seña).`,
+    `Cancelación: ${input.cancellationPolicy}`,
+  ].join("\n");
+}
+
+/**
  * Prearmed templates shown in the admin's "Detalle" screen. The admin taps
  * one, reviews the text, and sends manually — never automated.
  */
@@ -45,14 +73,8 @@ export const adminWhatsAppTemplates = {
     dueHours: number;
   }) =>
     `Hola ${input.ownerName}, tu turno para ${input.dogName} el ${input.when} fue aprobado. ` +
-    `Para confirmarlo necesitamos una seña de ARS ${input.amountArs.toLocaleString("es-AR")} (se descuenta del total), ` +
-    `dentro de las próximas ${input.dueHours} h. Te paso los datos para transferir o el link de Mercado Pago (con recargo) — ¿cuál preferís?`,
-  confirmDepositReceived: (input: {
-    ownerName: string;
-    dogName: string;
-    when: string;
-  }) =>
-    `Hola ${input.ownerName}, recibimos tu seña — el turno de ${input.dogName} el ${input.when} queda confirmado. ¡Te esperamos!`,
+    `Para confirmarlo necesitamos una seña de ARS ${input.amountArs.toLocaleString("es-AR")} por transferencia (se descuenta del total), ` +
+    `dentro de las próximas ${input.dueHours} h. Te mandamos los datos y el enlace para subir el comprobante por email; revisá también el correo no deseado.`,
   askForPhoto: (input: { ownerName: string; dogName: string }) =>
     `Hola ${input.ownerName}, ¿me mandás una foto reciente de ${input.dogName}?`,
   proposeNewTime: (input: { ownerName: string }) =>

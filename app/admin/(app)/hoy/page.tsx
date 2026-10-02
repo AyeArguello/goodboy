@@ -1,13 +1,18 @@
 import Link from "next/link";
 import { TodayList } from "@/components/admin/TodayList";
-import { getPendingCount, getTodayAppointments } from "@/lib/data/admin";
+import {
+  getPendingCount,
+  getPendingReceiptsCount,
+  getTodayAppointments,
+} from "@/lib/data/admin";
 import { getMaxActivePerDayFor } from "@/lib/domain/schedule";
 import { toDateKey } from "@/lib/domain/datetime";
 
 export default async function HoyPage() {
-  const [appointments, pendingCount] = await Promise.all([
+  const [appointments, pendingCount, receiptsCount] = await Promise.all([
     getTodayAppointments(),
     getPendingCount(),
+    getPendingReceiptsCount(),
   ]);
   // getTodayAppointments() already only returns confirmed/completed/no_show rows.
   const usedSlots = appointments.length;
@@ -25,6 +30,39 @@ export default async function HoyPage() {
           })}
         </span>
       </div>
+
+      {receiptsCount > 0 ? (
+        <Link
+          href="/admin/solicitudes?filter=receipts"
+          className="border-warning-line bg-warning-bg text-charcoal flex min-h-16 items-center gap-3.5 rounded-xl border-[1.5px] px-4 py-3.5 no-underline"
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#5E450C"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6" />
+          </svg>
+          <span className="flex-1">
+            <strong className="font-heading">
+              {receiptsCount}{" "}
+              {receiptsCount === 1
+                ? "comprobante espera verificación"
+                : "comprobantes esperan verificación"}
+            </strong>
+            <br />
+            <span className="text-[15px]">
+              Confirmá la seña o rechazá el comprobante
+            </span>
+          </span>
+        </Link>
+      ) : null}
 
       {pendingCount > 0 ? (
         <Link

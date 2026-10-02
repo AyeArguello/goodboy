@@ -123,6 +123,31 @@ export function collectProductionEnvProblems(env: Env): string[] {
     );
   }
 
+  // Email is the only automatic channel (payment instructions and the receipt
+  // upload link travel by email) and the owner must be notified of every
+  // receipt, so production cannot run on the no-op mailer.
+  if (clean(env.RESEND_API_KEY).length === 0) {
+    problems.push(
+      "RESEND_API_KEY no está definida (los emails no se enviarían).",
+    );
+  }
+  for (const name of [
+    "RESEND_FROM_EMAIL",
+    "OWNER_NOTIFICATION_EMAIL",
+  ] as const) {
+    const value = clean(env[name]);
+    if (value.length === 0) {
+      problems.push(`${name} no está definida.`);
+    } else if (!EMAIL_PATTERN.test(value)) {
+      problems.push(`${name} no es un correo válido.`);
+    }
+  }
+  if (clean(env.DEPOSIT_TRANSFER_ALIAS).length === 0) {
+    problems.push(
+      "DEPOSIT_TRANSFER_ALIAS no está definida (alias o datos para transferir la seña).",
+    );
+  }
+
   return problems;
 }
 

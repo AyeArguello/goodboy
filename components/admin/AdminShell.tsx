@@ -28,11 +28,14 @@ const TABS = [
 
 export function AdminShell({
   pendingCount,
+  pendingReceiptsCount,
   children,
 }: {
   pendingCount: number;
+  pendingReceiptsCount: number;
   children: ReactNode;
 }) {
+  const toReview = pendingCount + pendingReceiptsCount;
   const pathname = usePathname();
   const isActive = (href: string) =>
     pathname === href ||
@@ -76,11 +79,26 @@ export function AdminShell({
               </svg>
               <span className="flex-1">{t.label}</span>
               {t.href === "/admin/solicitudes" ? (
-                <Badge count={pendingCount} />
+                <>
+                  <Badge count={toReview} />
+                  <span className="sr-only">
+                    {pendingCount} solicitudes por revisar y{" "}
+                    {pendingReceiptsCount} comprobantes por verificar
+                  </span>
+                </>
               ) : null}
             </Link>
           );
         })}
+        <Link
+          href="/admin/mantenimiento"
+          aria-current={
+            pathname === "/admin/mantenimiento" ? "page" : undefined
+          }
+          className="font-heading text-ink-soft mt-auto flex min-h-11 items-center rounded-lg px-3.5 text-sm font-semibold no-underline"
+        >
+          Mantenimiento
+        </Link>
       </nav>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -119,9 +137,13 @@ export function AdminShell({
                   </svg>
                 </span>
                 {t.label}
-                {t.href === "/admin/solicitudes" && pendingCount > 0 ? (
+                {t.href === "/admin/solicitudes" && toReview > 0 ? (
                   <span className="bg-purple absolute top-0.5 right-[calc(50%-30px)] flex min-w-5 items-center justify-center rounded-full px-1 text-[11px] text-white">
-                    {pendingCount}
+                    <span aria-hidden="true">{toReview}</span>
+                    <span className="sr-only">
+                      {pendingCount} solicitudes por revisar y{" "}
+                      {pendingReceiptsCount} comprobantes por verificar
+                    </span>
                   </span>
                 ) : null}
               </Link>

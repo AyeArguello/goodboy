@@ -47,7 +47,9 @@ const securityHeaders = [
       "default-src 'self'",
       "frame-ancestors 'none'",
       `connect-src 'self' ${supabaseUrl}`,
-      "img-src 'self' data:",
+      // The Supabase origin is allowed so the admin can preview a receipt
+      // through its short-lived signed Storage URL.
+      `img-src 'self' data: ${supabaseUrl}`,
       scriptSrc,
       "style-src 'self' 'unsafe-inline'",
       "base-uri 'self'",

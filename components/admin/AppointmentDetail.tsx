@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { TextAreaField, TextField } from "@/components/ui/Field";
@@ -18,8 +19,12 @@ import { formatDayLabel, formatTimeLabel } from "@/lib/domain/datetime";
 import {
   adminWhatsAppTemplates,
   buildWhatsAppLink,
+  depositConfirmationMessage,
 } from "@/lib/domain/whatsapp";
-import type { AppointmentRow } from "@/lib/data/admin";
+import type { AppointmentRow, EmailLogRow, EventRow } from "@/lib/data/admin";
+import { HistoryPanel } from "./HistoryPanel";
+import { ReceiptsPanel } from "./ReceiptsPanel";
+import { RetentionPanel } from "./RetentionPanel";
 import {
   approveRequest,
   cancelAppointment,
@@ -30,18 +35,20 @@ import {
   revertToConfirmed,
   reverseDepositPayment,
   setInternalNotes,
+  type AdminActionResult,
 } from "@/app/admin/(app)/actions";
 
-const PAYMENT_METHODS: PaymentMethod[] = [
-  "cash",
-  "bank_transfer",
-  "mercadopago_link",
-];
+/** Manual entry without a receipt (cash at the shop, etc.). Card/Mercado Pago payments do not exist in this flow. */
+const PAYMENT_METHODS: PaymentMethod[] = ["cash", "bank_transfer"];
 
 export function AppointmentDetail({
   appointment,
+  events,
+  emails,
 }: {
   appointment: AppointmentRow;
+  events: EventRow[];
+  emails: EmailLogRow[];
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -49,6 +56,10 @@ export function AppointmentDetail({
   const [confirmingReject, setConfirmingReject] = useState(false);
   const [adminNotes, setAdminNotes] = useState(appointment.adminNotes ?? "");
   const [notesSaved, setNotesSaved] = useState(true);
+  const [feedback, setFeedback] = useState<{
+    kind: "ok" | "warning" | "error";
+    text: string;
+  } | null>(null);
   const [depositForm, setDepositForm] = useState({
     amount: String(businessConfig.deposit.amountArs),
     method: "bank_transfer" as PaymentMethod,
@@ -74,9 +85,26 @@ export function AppointmentDetail({
     appointment.status === "confirmed" &&
     hoursUntilSlot < businessConfig.rules.cancellationCutoffHours;
 
-  function run(action: () => Promise<{ ok: boolean; error?: string }>) {
+  function run(action: () => Promise<AdminActionResult>, okText?: string) {
     startTransition(async () => {
-      await action();
+      const result = await action();
+      if (!result.ok) {
+        setFeedback({ kind: "error", text: result.error });
+      } else if (result.emailStatus === "failed") {
+        setFeedback({
+          kind: "warning",
+          text: `${okText ?? "Listo."} El email al cliente falló y quedó en cola para reintentar (ver Historial).`,
+        });
+      } else if (okText) {
+        setFeedback({
+          kind: "ok",
+          text:
+            okText +
+            (result.emailStatus === "sent"
+              ? " Le avisamos al cliente por email."
+              : ""),
+        });
+      }
       router.refresh();
     });
   }
@@ -89,16 +117,39 @@ export function AppointmentDetail({
   }
 
   function submitDeposit() {
-    startTransition(async () => {
-      const result = await recordDepositPayment(
-        appointment.id,
-        Number(depositForm.amount),
-        depositForm.method,
-        depositForm.reference || undefined,
-      );
-      if (result.ok) router.refresh();
-    });
+    run(
+      () =>
+        recordDepositPayment(
+          appointment.id,
+          Number(depositForm.amount),
+          depositForm.method,
+          depositForm.reference || undefined,
+        ),
+      "Seña registrada: el turno quedó confirmado.",
+    );
   }
+
+  const hasPendingReceipt = appointment.receipts.some(
+    (r) => r.status === "pending_verification",
+  );
+  const confirmationLink =
+    appointment.status === "confirmed"
+      ? buildWhatsAppLink(
+          appointment.phoneE164,
+          depositConfirmationMessage({
+            ownerName: appointment.ownerName,
+            dogName: appointment.dogName,
+            when,
+            pickup: appointment.logisticsMode === "pickup",
+            neighborhood: appointment.neighborhood,
+            depositAmountArs:
+              appointment.latestPayment?.amountArs ??
+              businessConfig.deposit.amountArs,
+            priceRange: businessConfig.prices[appointment.sizeBucket].range,
+            cancellationPolicy: businessConfig.cancellationPolicyText,
+          }),
+        )
+      : null;
 
   const waMessages = [
     {
@@ -109,14 +160,6 @@ export function AppointmentDetail({
         when,
         amountArs: businessConfig.deposit.amountArs,
         dueHours: businessConfig.deposit.dueHours,
-      }),
-    },
-    {
-      label: "Confirmar seña recibida",
-      text: adminWhatsAppTemplates.confirmDepositReceived({
-        ownerName: appointment.ownerName,
-        dogName: appointment.dogName,
-        when,
       }),
     },
     {
@@ -248,16 +291,47 @@ export function AppointmentDetail({
             Guardar notas internas
           </Button>
         </section>
+
+        {appointment.receipts.length > 0 ||
+        appointment.status === "awaiting_deposit" ? (
+          <ReceiptsPanel
+            appointment={appointment}
+            expectedAmountArs={businessConfig.deposit.amountArs}
+          />
+        ) : null}
+        <RetentionPanel appointment={appointment} />
+        <HistoryPanel events={events} emails={emails} />
       </div>
 
       <div className="flex flex-col gap-4">
         <section className="border-lavender-100 flex flex-col gap-2.5 rounded-xl border bg-white p-4.5">
           <h3 className="font-heading m-0 text-base font-bold">Acciones</h3>
 
+          <div aria-live="polite">
+            {feedback ? (
+              <Alert
+                variant={
+                  feedback.kind === "error"
+                    ? "error"
+                    : feedback.kind === "warning"
+                      ? "warning"
+                      : "info"
+                }
+              >
+                {feedback.text}
+              </Alert>
+            ) : null}
+          </div>
+
           {appointment.status === "pending_review" ? (
             <>
               <Button
-                onClick={() => run(() => approveRequest(appointment.id))}
+                onClick={() =>
+                  run(
+                    () => approveRequest(appointment.id),
+                    "Solicitud aprobada: le mandamos los datos para la seña.",
+                  )
+                }
                 loading={isPending}
               >
                 Aprobar y pedir seña
@@ -280,7 +354,10 @@ export function AppointmentDetail({
                       className="bg-error! hover:bg-error!"
                       onClick={() => {
                         setConfirmingReject(false);
-                        run(() => rejectRequest(appointment.id));
+                        run(
+                          () => rejectRequest(appointment.id),
+                          "Solicitud rechazada.",
+                        );
                       }}
                       loading={isPending}
                     >
@@ -300,67 +377,101 @@ export function AppointmentDetail({
           ) : null}
 
           {appointment.status === "awaiting_deposit" ? (
-            <div className="border-warning-line bg-warning-bg flex flex-col gap-2.5 rounded-lg border-[1.5px] p-3.5">
-              <strong className="font-heading text-sm">
-                Registrar seña recibida
-              </strong>
-              <TextField
-                label="Monto (ARS)"
-                type="number"
-                value={depositForm.amount}
-                onChange={(e) =>
-                  setDepositForm((f) => ({ ...f, amount: e.target.value }))
-                }
-              />
-              <label className="flex flex-col gap-1.5">
-                <span className="font-heading text-[15px] font-semibold">
-                  Medio de pago
-                </span>
-                <select
-                  value={depositForm.method}
-                  onChange={(e) =>
-                    setDepositForm((f) => ({
-                      ...f,
-                      method: e.target.value as PaymentMethod,
-                    }))
-                  }
-                  className="border-ink-soft h-13 rounded-md border-[1.5px] bg-white px-3.5 text-[17px]"
-                >
-                  {PAYMENT_METHODS.map((m) => (
-                    <option key={m} value={m}>
-                      {PAYMENT_METHOD_LABELS[m]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <TextField
-                label="Referencia"
-                optional
-                value={depositForm.reference}
-                onChange={(e) =>
-                  setDepositForm((f) => ({ ...f, reference: e.target.value }))
-                }
-              />
-              <Button
-                onClick={submitDeposit}
-                loading={isPending}
-                disabled={depositOverdue}
+            hasPendingReceipt ? (
+              <p className="text-ink-soft m-0 text-sm">
+                Hay un comprobante pendiente: confirmalo o rechazalo desde
+                &quot;Comprobantes&quot;.
+              </p>
+            ) : (
+              <details className="border-warning-line bg-warning-bg rounded-lg border-[1.5px] p-3.5">
+                <summary className="font-heading min-h-11 cursor-pointer text-sm font-bold">
+                  Registrar seña sin comprobante (efectivo u otro medio)
+                </summary>
+                <div className="mt-2.5 flex flex-col gap-2.5">
+                  <TextField
+                    label="Monto (ARS)"
+                    type="number"
+                    value={depositForm.amount}
+                    onChange={(e) =>
+                      setDepositForm((f) => ({ ...f, amount: e.target.value }))
+                    }
+                  />
+                  <label className="flex flex-col gap-1.5">
+                    <span className="font-heading text-[15px] font-semibold">
+                      Medio de pago
+                    </span>
+                    <select
+                      value={depositForm.method}
+                      onChange={(e) =>
+                        setDepositForm((f) => ({
+                          ...f,
+                          method: e.target.value as PaymentMethod,
+                        }))
+                      }
+                      className="border-ink-soft h-13 rounded-md border-[1.5px] bg-white px-3.5 text-[17px]"
+                    >
+                      {PAYMENT_METHODS.map((m) => (
+                        <option key={m} value={m}>
+                          {PAYMENT_METHOD_LABELS[m]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <TextField
+                    label="Referencia"
+                    optional
+                    value={depositForm.reference}
+                    onChange={(e) =>
+                      setDepositForm((f) => ({
+                        ...f,
+                        reference: e.target.value,
+                      }))
+                    }
+                  />
+                  <Button
+                    onClick={submitDeposit}
+                    loading={isPending}
+                    disabled={depositOverdue}
+                  >
+                    Confirmar seña recibida
+                  </Button>
+                  {depositOverdue ? (
+                    <p className="text-error m-0 text-sm font-bold">
+                      El plazo venció. Aprobá la solicitud de nuevo para abrir
+                      un plazo nuevo.
+                    </p>
+                  ) : null}
+                </div>
+              </details>
+            )
+          ) : null}
+
+          {confirmationLink ? (
+            <div className="flex flex-col gap-1">
+              <a
+                href={confirmationLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-purple font-heading flex min-h-13 items-center justify-center rounded-full px-6 text-[15px] font-semibold text-white no-underline"
               >
-                Confirmar seña recibida
-              </Button>
-              {depositOverdue ? (
-                <p className="text-error m-0 text-sm font-bold">
-                  El plazo venció. Aprobá la solicitud de nuevo para abrir un
-                  plazo nuevo.
-                </p>
-              ) : null}
+                Abrir WhatsApp con confirmación
+              </a>
+              <span className="text-ink-soft text-xs">
+                Se abre WhatsApp con el mensaje ya escrito; lo enviás vos. La
+                app no puede saber si lo enviaste.
+              </span>
             </div>
           ) : null}
 
           {appointment.status === "expired" ||
           appointment.status === "cancelled_by_business" ? (
             <Button
-              onClick={() => run(() => approveRequest(appointment.id))}
+              onClick={() =>
+                run(
+                  () => approveRequest(appointment.id),
+                  "Solicitud aprobada: le mandamos los datos para la seña.",
+                )
+              }
               loading={isPending}
             >
               Reactivar y pedir seña de nuevo
@@ -434,7 +545,10 @@ export function AppointmentDetail({
                       className="bg-error! hover:bg-error!"
                       onClick={() => {
                         setConfirmingCancel(false);
-                        run(() => cancelAppointment(appointment.id, "client"));
+                        run(
+                          () => cancelAppointment(appointment.id, "client"),
+                          "Turno cancelado.",
+                        );
                       }}
                       loading={isPending}
                     >
@@ -452,8 +566,9 @@ export function AppointmentDetail({
                       className="bg-error! hover:bg-error!"
                       onClick={() => {
                         setConfirmingCancel(false);
-                        run(() =>
-                          cancelAppointment(appointment.id, "business"),
+                        run(
+                          () => cancelAppointment(appointment.id, "business"),
+                          "Turno cancelado.",
                         );
                       }}
                       loading={isPending}

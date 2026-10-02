@@ -94,6 +94,30 @@ function reducer(state: State, action: Action): State {
   }
 }
 
+/** The earliest step that owns one of the server-reported field errors. */
+function stepForErrors(errors: WizardFieldErrors): number {
+  if ((errors as Record<string, unknown>).slotId) return 1;
+  const owners: [number, (keyof WizardFieldErrors)[]][] = [
+    [1, ["slot"]],
+    [
+      2,
+      [
+        "dogName",
+        "sizeBucket",
+        "servicePackage",
+        "breed",
+        "coatState",
+        "notes",
+      ],
+    ],
+    [3, ["logisticsMode", "neighborhood", "pickupAddress"]],
+    [4, ["ownerName", "phone", "email"]],
+    [5, ["consentPrice", "consentDeposit", "consentPrivacy", "consent"]],
+  ];
+  const found = owners.find(([, keys]) => keys.some((k) => errors[k]));
+  return found ? found[0] : 2;
+}
+
 function validateStep(step: number, state: State): WizardFieldErrors {
   const { form, selectedSlotId } = state;
   const errors: WizardFieldErrors = {};
@@ -119,6 +143,13 @@ function validateStep(step: number, state: State): WizardFieldErrors {
     if (form.phone.replace(/\D/g, "").length !== 10) {
       errors.phone =
         "Revisá el número: necesitamos código de área y número (10 dígitos).";
+    }
+    const email = form.email.trim();
+    if (!email) {
+      errors.email =
+        "Escribí tu correo: ahí te mandamos las novedades de tu turno.";
+    } else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      errors.email = "Revisá el correo: parece que le falta algo.";
     }
   }
   if (
@@ -201,7 +232,7 @@ export function TurneroWizard({ slots }: { slots: BookableSlot[] }) {
       pickupAddress: state.form.pickupAddress || undefined,
       ownerName: state.form.ownerName,
       phone: state.form.phone,
-      email: state.form.email || undefined,
+      email: state.form.email.trim(),
       consentPrice: state.form.consentPrice,
       consentDeposit: state.form.consentDeposit,
       consentPrivacy: state.form.consentPrivacy,
@@ -218,11 +249,9 @@ export function TurneroWizard({ slots }: { slots: BookableSlot[] }) {
         ) {
           dispatch({ type: "SUBMIT_TAKEN" });
         } else if (Object.keys(result.fieldErrors).length > 0) {
-          dispatch({
-            type: "SET_ERRORS",
-            errors: result.fieldErrors as WizardFieldErrors,
-          });
-          dispatch({ type: "GO_STEP", step: 2 });
+          const fieldErrors = result.fieldErrors as WizardFieldErrors;
+          dispatch({ type: "GO_STEP", step: stepForErrors(fieldErrors) });
+          dispatch({ type: "SET_ERRORS", errors: fieldErrors });
         } else {
           dispatch({ type: "SUBMIT_NETWORK_ERROR" });
         }
@@ -238,6 +267,7 @@ export function TurneroWizard({ slots }: { slots: BookableSlot[] }) {
         code={state.successCode}
         slotLabel={slotLabel}
         dogName={state.form.dogName}
+        email={state.form.email.trim()}
         whatsAppMessage={customerSummaryMessage({
           dogName: state.form.dogName,
           slotLabel,

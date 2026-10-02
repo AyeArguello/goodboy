@@ -31,12 +31,12 @@ export function Step5Consent({ form, errors, setField }: StepFormProps) {
       title: "Seña y cancelación",
       text: `Entiendo que para confirmar el turno se pide una seña de ARS ${businessConfig.deposit.amountArs.toLocaleString(
         "es-AR",
-      )} (se descuenta del total). ${businessConfig.cancellationPolicyText}`,
+      )} por transferencia (se descuenta del total), que debo subir el comprobante y que el turno queda confirmado recién cuando Good Boy lo verifica. ${businessConfig.cancellationPolicyText}`,
     },
     {
       key: "consentPrivacy" as const,
       title: "Privacidad",
-      text: "Acepto que mis datos se usen solo para gestionar este turno.",
+      text: "Acepto que mis datos, y el comprobante de pago que suba, se usen solo para gestionar este turno. Entiendo que el comprobante se elimina automáticamente después del cierre del turno.",
     },
   ];
 

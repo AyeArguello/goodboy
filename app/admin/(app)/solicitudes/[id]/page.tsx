@@ -1,6 +1,10 @@
 import { notFound } from "next/navigation";
 import { AppointmentDetail } from "@/components/admin/AppointmentDetail";
-import { getAppointmentById } from "@/lib/data/admin";
+import {
+  getAppointmentById,
+  getAppointmentEmails,
+  getAppointmentEvents,
+} from "@/lib/data/admin";
 
 export default async function AppointmentDetailPage({
   params,
@@ -11,5 +15,16 @@ export default async function AppointmentDetailPage({
   const appointment = await getAppointmentById(id);
   if (!appointment) notFound();
 
-  return <AppointmentDetail appointment={appointment} />;
+  const [events, emails] = await Promise.all([
+    getAppointmentEvents(id),
+    getAppointmentEmails(id),
+  ]);
+
+  return (
+    <AppointmentDetail
+      appointment={appointment}
+      events={events}
+      emails={emails}
+    />
+  );
 }

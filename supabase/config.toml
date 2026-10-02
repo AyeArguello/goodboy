@@ -31,3 +31,17 @@ enable_confirmations = false
 [inbucket]
 enabled = true
 port = 54324
+
+# Private bucket for payment receipts (also created by the
+# 20261002123846_payment_receipts_flow migration on hosted projects).
+# Never public; the server reads/writes it with the service role and the admin
+# sees files only through short-lived signed URLs.
+[storage.buckets.payment-receipts]
+public = false
+file_size_limit = "5MiB"
+allowed_mime_types = ["image/jpeg", "image/png", "image/webp"]
+
+# Daily purge of expired receipts. Authenticated with PURGE_CRON_SECRET inside
+# the function instead of a JWT, because Supabase Cron calls it.
+[functions.purge-payment-receipts]
+verify_jwt = false

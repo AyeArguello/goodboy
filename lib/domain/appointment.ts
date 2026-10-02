@@ -44,7 +44,70 @@ export type AppointmentEventType =
   | "no_show"
   | "expired"
   | "forfeited"
-  | "reverted";
+  | "reverted"
+  | "receipt_uploaded"
+  | "receipt_rejected"
+  | "receipt_deleted"
+  | "upload_link_issued"
+  | "refund_recorded"
+  | "retention_changed";
+
+/** Human labels for the admin's change history. */
+export const EVENT_LABELS: Record<AppointmentEventType, string> = {
+  created: "Solicitud creada",
+  approved: "Solicitud aprobada",
+  rejected: "Solicitud rechazada",
+  deposit_recorded: "Seña confirmada",
+  deposit_reversed: "Seña revertida",
+  rescheduled: "Turno reprogramado",
+  cancelled: "Turno cancelado",
+  completed: "Turno completado",
+  no_show: "Cliente ausente",
+  expired: "Plazo de seña vencido",
+  forfeited: "Seña perdida",
+  reverted: "Cambio deshecho",
+  receipt_uploaded: "Comprobante recibido",
+  receipt_rejected: "Comprobante rechazado",
+  receipt_deleted: "Comprobante eliminado",
+  upload_link_issued: "Enlace de carga emitido",
+  refund_recorded: "Devolución registrada",
+  retention_changed: "Retención de comprobantes",
+};
+
+export type ReceiptStatus =
+  "pending_verification" | "verified" | "rejected" | "deleted";
+
+export type ReceiptTone =
+  "pending" | "overdue" | "verified" | "rejected" | "deleted";
+
+/**
+ * How the admin sees a receipt. A receipt that was uploaded in time but is
+ * still waiting after the payment window closed keeps the slot reserved, so it
+ * is flagged "Verificación vencida" to be reviewed first — it is NEVER
+ * confirmed automatically.
+ */
+export function receiptDisplay(
+  status: ReceiptStatus,
+  depositDueAt: string | null,
+  now: Date,
+): { label: string; tone: ReceiptTone } {
+  if (status === "pending_verification") {
+    const overdue = depositDueAt !== null && new Date(depositDueAt) < now;
+    return overdue
+      ? { label: "Verificación vencida", tone: "overdue" }
+      : { label: "Pendiente de verificación", tone: "pending" };
+  }
+  if (status === "verified") return { label: "Verificado", tone: "verified" };
+  if (status === "rejected") return { label: "Rechazado", tone: "rejected" };
+  return { label: "Eliminado", tone: "deleted" };
+}
+
+export const RECEIPT_STATUS_LABELS: Record<ReceiptStatus, string> = {
+  pending_verification: "Pendiente de verificación",
+  verified: "Verificado",
+  rejected: "Rechazado",
+  deleted: "Eliminado",
+};
 
 export type SizeBucket = "pequeno" | "mediano" | "grande";
 export type CoatState = "corto" | "largo" | "con_nudos" | "no_se";
@@ -114,8 +177,11 @@ export interface ConsentRecord {
   acceptedAt: string;
 }
 
-/** Bumped for v2: consent text now names the ARS 20.000 deposit and the 48h cutoff explicitly. */
-export const CONSENT_TEXT_VERSION = 2;
+/**
+ * Bumped for v3: the deposit is a manual bank transfer confirmed after the
+ * client uploads a receipt, and the privacy consent mentions the receipt.
+ */
+export const CONSENT_TEXT_VERSION = 3;
 
 /** Known error codes raised by request_appointment / admin RPCs (see supabase/migrations). */
 export type BookingErrorCode =

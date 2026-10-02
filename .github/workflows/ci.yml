@@ -16,6 +16,10 @@ env:
   ADMIN_EMAIL_ALLOWLIST: ci-admin@example.com
   RATE_LIMIT_HMAC_SECRET: ci-not-a-real-hmac-secret-0123456789abcdef
   SUPABASE_SERVICE_ROLE_KEY: ci-not-a-real-service-role-key
+  RESEND_API_KEY: re_ci_not_a_real_key
+  RESEND_FROM_EMAIL: turnos-ci@example.com
+  OWNER_NOTIFICATION_EMAIL: owner-ci@example.com
+  DEPOSIT_TRANSFER_ALIAS: ci.alias.no.real
 
 jobs:
   quality:
@@ -42,17 +46,35 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm format:check
-      - run: pnpm test
+      - name: Unit tests
+        run: pnpm exec vitest run --reporter=default --reporter=json --outputFile.json=unit-results.json
+
+      - name: Unit test counts (no skipped tests allowed)
+        if: always()
+        run: node .github/scripts/test-summary.mjs vitest unit unit-results.json
+
       - run: pnpm build
 
+      - name: The service role key must never reach the browser bundle
+        run: |
+          if grep -rIl -e 'ci-not-a-real-service-role-key' -e 'SUPABASE_SERVICE_ROLE_KEY' .next/static; then
+            echo "::error::service role key (or its name) found in the client bundle"
+            exit 1
+          fi
+          echo "client bundle is clean"
+
   db-and-e2e:
-    name: Supabase RLS/RPC + Playwright smoke
+    name: Supabase (RLS, RPC, Storage, Edge Function) + Playwright
     runs-on: ubuntu-latest
     env:
       # Points the app (next dev, used by Playwright) at the local Docker
-      # stack started below, not at a hosted project.
+      # stack started below, not at a hosted project. These two keys are the
+      # publicly documented demo keys every `supabase start` stack uses
+      # (iss: supabase-demo) — they only work against a local instance and are
+      # not secrets. The E2E receipt journey needs real ones.
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-key
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+      SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
     steps:
       - uses: actions/checkout@v4
 
@@ -74,16 +96,45 @@ jobs:
       - name: Start local Supabase (Postgres + Auth) and apply migrations
         run: supabase start
 
-      - name: Integration tests (RLS, RPC, concurrency)
-        run: pnpm test:integration
+      - name: Serve the purge Edge Function (Deno) against the local stack
+        run: |
+          printf 'PURGE_CRON_SECRET=ci-purge-secret-not-real\n' > supabase/functions/.env
+          nohup supabase functions serve --env-file supabase/functions/.env > edge-functions.log 2>&1 &
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:54321/functions/v1/purge-payment-receipts || true)
+            if [ "$code" = "405" ]; then echo "edge function is up"; exit 0; fi
+            sleep 3
+          done
+          echo "::error::the purge Edge Function never came up"
+          cat edge-functions.log
+          exit 1
+
+      - name: Integration tests (RLS, RPC, Storage, purge, emails, Edge Function)
+        run: pnpm exec vitest run --config vitest.integration.config.ts --reporter=default --reporter=json --outputFile.json=integration-results.json
         env:
           NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          EDGE_FUNCTION_URL: http://127.0.0.1:54321/functions/v1/purge-payment-receipts
+          PURGE_CRON_SECRET: ci-purge-secret-not-real
+
+      - name: Integration test counts (no skipped tests allowed)
+        if: always()
+        run: node .github/scripts/test-summary.mjs vitest integration integration-results.json
+
+      - name: Edge Function log
+        if: always()
+        run: cat edge-functions.log || true
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: E2E smoke
-        run: pnpm test:e2e
+      - name: E2E (smoke + full receipt journey)
+        run: pnpm exec playwright test --reporter=github,json
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: e2e-results.json
+
+      - name: E2E counts (no skipped tests allowed)
+        if: always()
+        run: node .github/scripts/test-summary.mjs playwright e2e e2e-results.json
 
       - run: supabase stop
         if: always()

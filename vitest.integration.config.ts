@@ -11,6 +11,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "."),
+      // The real package throws on import outside Next's server graph.
+      "server-only": path.resolve(__dirname, "vitest.server-only-stub.ts"),
     },
   },
   test: {

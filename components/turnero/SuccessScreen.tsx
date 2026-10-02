@@ -11,6 +11,7 @@ export interface SuccessScreenProps {
   code: string;
   slotLabel: string;
   dogName: string;
+  email: string;
   whatsAppMessage: string;
   onBackHome: () => void;
 }
@@ -19,6 +20,7 @@ export function SuccessScreen({
   code,
   slotLabel,
   dogName,
+  email,
   whatsAppMessage,
   onBackHome,
 }: SuccessScreenProps) {
@@ -57,8 +59,9 @@ export function SuccessScreen({
           <StatusBadge status="pending_review" />
         </div>
         <p className="text-ink-soft m-0">
-          Tu turno todavía no está confirmado. La dueña revisa cada solicitud;
-          si la aprueba, te va a pedir una seña de ARS{" "}
+          Tu turno todavía no está confirmado. La dueña revisa cada solicitud y
+          te avisa por email a <strong>{email}</strong>. Si la aprueba, te va a
+          pedir una seña de ARS{" "}
           {businessConfig.deposit.amountArs.toLocaleString("es-AR")} (se
           descuenta del total) para confirmarlo.
         </p>
@@ -90,9 +93,9 @@ export function SuccessScreen({
 
       <ol className="m-0 flex list-none flex-col gap-3.5 p-0">
         {[
-          "Mandanos el resumen y una foto reciente de tu perro por WhatsApp. Nos ayuda a planificar el trabajo.",
-          `Revisamos tu solicitud y te respondemos por WhatsApp. ${businessConfig.responseTimeText}`,
-          `Si la aprobamos, te pasamos los datos para pagar la seña de ARS ${businessConfig.deposit.amountArs.toLocaleString("es-AR")} (transferencia o Mercado Pago). El turno queda confirmado recién cuando la registramos.`,
+          `Revisamos tu solicitud y te respondemos por email. ${businessConfig.responseTimeText} Mirá también la carpeta de correo no deseado.`,
+          `Si la aprobamos, te mandamos los datos para transferir la seña de ARS ${businessConfig.deposit.amountArs.toLocaleString("es-AR")} y un enlace seguro para subir el comprobante.`,
+          "Verificamos el comprobante a mano. El turno queda confirmado recién cuando lo verificamos, y te avisamos por email.",
           "El día del turno evaluamos a tu perro y confirmamos el precio final — la seña se descuenta del total.",
         ].map((text, i) => (
           <li key={i} className="grid grid-cols-[32px_1fr] gap-3">
@@ -113,7 +116,7 @@ export function SuccessScreen({
           target="_blank"
           rel="noopener noreferrer"
         >
-          Enviar resumen y foto por WhatsApp
+          Mandar una foto de mi perro por WhatsApp (opcional)
         </CtaLink>
         <Button variant="secondary" onClick={onBackHome}>
           Volver al inicio

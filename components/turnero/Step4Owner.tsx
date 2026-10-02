@@ -9,7 +9,8 @@ export function Step4Owner({ form, errors, setField }: StepFormProps) {
           ¿Cómo te contactamos?
         </h1>
         <p className="text-ink-soft m-0">
-          Usamos tu WhatsApp solo para coordinar este turno.
+          Usamos tu correo para avisarte cada novedad de tu turno (aprobación,
+          seña y confirmación) y tu WhatsApp solo si hace falta coordinar algo.
         </p>
       </div>
 
@@ -35,11 +36,14 @@ export function Step4Owner({ form, errors, setField }: StepFormProps) {
 
       <TextField
         label="Correo"
-        optional
         type="email"
+        inputMode="email"
         autoComplete="email"
+        placeholder="nombre@ejemplo.com"
+        hint="Ahí te mandamos los datos para pagar la seña y el enlace para subir el comprobante."
         value={form.email}
         onChange={(e) => setField("email", e.target.value)}
+        error={errors.email}
       />
     </section>
   );

@@ -65,6 +65,24 @@ Para apuntar a un proyecto Supabase real: crear el proyecto en supabase.com, cop
 key`/`service_role key` a las variables de entorno del hosting, y correr `supabase link` +
 `supabase db push` para aplicar las migraciones versionadas en `supabase/migrations/`.
 
+## Comprobantes de seña y limpieza automática
+
+La seña (ARS 20.000) se paga **solo por transferencia manual**; no hay Mercado Pago, tarjetas ni
+recargos. Flujo: la solicitud queda `pending_review` → la dueña aprueba (`awaiting_deposit`) → el cliente
+recibe un email con los datos y un enlace secreto (`/turnos/comprobante#t=…`, 256 bits, solo se guarda su
+hash) → sube una imagen JPG/PNG/WebP (máx. 5 MB, 1–2 archivos) a un bucket **privado** → la dueña ve el
+comprobante con una URL firmada de 60 s y confirma o rechaza → email de confirmación (y botón opcional
+para abrir WhatsApp con el mensaje prearmado; nunca se envía solo).
+
+- **Retención:** rechazado +7 días · solicitud vencida +7 días · turno completado/cancelado/cerrado +30
+  días tras el cierre · `retention_hold` suspende la eliminación · reclamo resuelto +180 días.
+- **Purga diaria:** Edge Function `supabase/functions/purge-payment-receipts` (idempotente, borra por la API
+  de Storage, nunca por SQL). Programarla **una vez por proyecto** con
+  `supabase/schedule-purge-payment-receipts.sql` (necesita `PURGE_CRON_SECRET` como secreto de la función
+  y en Vault). También se puede correr a mano desde **Admin → Mantenimiento**.
+- **Emails:** cada envío pasa por `email_outbox` con clave de idempotencia; si Resend falla, la transición
+  no se revierte y se puede reintentar sin duplicar (Admin → Mantenimiento o Historial de la ficha).
+
 ## Variables de entorno
 
 Ver [`.env.example`](.env.example) — están agrupadas por: sitio/dominio, Supabase, datos de negocio
@@ -93,7 +111,7 @@ celular.
 | Comando                 | Qué prueba                                                                    | Requiere                            |
 | ----------------------- | ----------------------------------------------------------------------------- | ----------------------------------- |
 | `pnpm test`             | Reglas de negocio (24 h, 3/día, código, teléfono, WhatsApp, zona horaria), UI | Nada                                |
-| `pnpm test:integration` | RLS, RPC transaccional, concurrencia (dos reservas al mismo slot)             | `pnpm supabase:start` (Docker)      |
+| `pnpm test:integration` | RLS, RPC, concurrencia, comprobantes + Storage real, purga, emails            | `pnpm supabase:start` (Docker)      |
 | `pnpm test:e2e`         | Flujos completos, teclado, mobile, redirect de `/admin` sin sesión            | Nada (levanta su propio `next dev`) |
 | `pnpm build` (prod env) | Que el build falle si faltan datos de negocio, claves Supabase o secretos     | Variables de entorno de producción  |
 

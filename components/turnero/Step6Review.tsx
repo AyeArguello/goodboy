@@ -50,7 +50,7 @@ export function Step6Review({
     },
     {
       label: "Responsable",
-      value: `${form.ownerName} · +54 ${form.phone}${form.email ? ` · ${form.email}` : ""}`,
+      value: `${form.ownerName} · +54 ${form.phone} · ${form.email}`,
       step: 4,
     },
   ];
@@ -111,10 +111,10 @@ export function Step6Review({
         </svg>
         <p className="m-0 text-base">
           <strong>Todavía no es un turno confirmado.</strong> Al enviar, tu
-          solicitud queda pendiente de revisión. Si la aprobamos, te vamos a
-          pedir una seña de ARS{" "}
-          {businessConfig.deposit.amountArs.toLocaleString("es-AR")} (se
-          descuenta del total) para confirmarlo. No se paga nada ahora.
+          solicitud queda pendiente de revisión y no se paga nada ahora. Si la
+          aprobamos, te escribimos por email con los datos para transferir una
+          seña de ARS {businessConfig.deposit.amountArs.toLocaleString("es-AR")}{" "}
+          (se descuenta del total) y un enlace seguro para subir el comprobante.
         </p>
       </div>
     </section>

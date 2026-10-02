@@ -6,7 +6,9 @@ import {
   type AppointmentStatus,
   type CoatState,
   type LogisticsMode,
+  type AppointmentEventType,
   type PaymentMethod,
+  type ReceiptStatus,
   type ServicePackageKey,
   type SizeBucket,
 } from "@/lib/domain/appointment";
@@ -51,6 +53,25 @@ export interface PaymentInfo {
   status: "pending" | "verified" | "reversed";
   externalReference: string | null;
   verifiedAt: string;
+  refundedAt: string | null;
+  refundAmountArs: number | null;
+  refundReference: string | null;
+}
+
+export interface ReceiptRow {
+  id: string;
+  status: ReceiptStatus;
+  uploadedAt: string;
+  reference: string | null;
+  mimeType: string | null;
+  sizeBytes: number | null;
+  verifiedAt: string | null;
+  rejectedAt: string | null;
+  rejectionReason: string | null;
+  retentionUntil: string | null;
+  deletedAt: string | null;
+  deletionAttempts: number;
+  lastDeletionError: string | null;
 }
 
 export interface AppointmentRow {
@@ -74,6 +95,11 @@ export interface AppointmentRow {
   slotId: string;
   depositDueAt: string | null;
   latestPayment: PaymentInfo | null;
+  receipts: ReceiptRow[];
+  closedAt: string | null;
+  retentionHold: boolean;
+  retentionHoldReason: string | null;
+  disputeResolvedAt: string | null;
 }
 
 type RawAppointment = {
@@ -95,6 +121,10 @@ type RawAppointment = {
   status: AppointmentStatus;
   slot_id: string;
   deposit_due_at: string | null;
+  closed_at: string | null;
+  retention_hold: boolean;
+  retention_hold_reason: string | null;
+  dispute_resolved_at: string | null;
   availability_slots: { starts_at: string } | null;
   payments: {
     id: string;
@@ -103,6 +133,24 @@ type RawAppointment = {
     status: "pending" | "verified" | "reversed";
     external_reference: string | null;
     verified_at: string;
+    refunded_at: string | null;
+    refund_amount_ars: number | null;
+    refund_reference: string | null;
+  }[];
+  payment_receipts: {
+    id: string;
+    status: ReceiptStatus;
+    uploaded_at: string;
+    reference: string | null;
+    original_mime_type: string | null;
+    size_bytes: number | null;
+    verified_at: string | null;
+    rejected_at: string | null;
+    rejection_reason: string | null;
+    retention_until: string | null;
+    deleted_at: string | null;
+    deletion_attempts: number;
+    last_deletion_error: string | null;
   }[];
 };
 
@@ -138,16 +186,45 @@ function mapAppointment(row: RawAppointment): AppointmentRow {
           status: latest.status,
           externalReference: latest.external_reference,
           verifiedAt: latest.verified_at,
+          refundedAt: latest.refunded_at,
+          refundAmountArs:
+            latest.refund_amount_ars === null
+              ? null
+              : Number(latest.refund_amount_ars),
+          refundReference: latest.refund_reference,
         }
       : null,
+    receipts: [...(row.payment_receipts ?? [])]
+      .sort((a, b) => b.uploaded_at.localeCompare(a.uploaded_at))
+      .map((r) => ({
+        id: r.id,
+        status: r.status,
+        uploadedAt: r.uploaded_at,
+        reference: r.reference,
+        mimeType: r.original_mime_type,
+        sizeBytes: r.size_bytes,
+        verifiedAt: r.verified_at,
+        rejectedAt: r.rejected_at,
+        rejectionReason: r.rejection_reason,
+        retentionUntil: r.retention_until,
+        deletedAt: r.deleted_at,
+        deletionAttempts: r.deletion_attempts,
+        lastDeletionError: r.last_deletion_error,
+      })),
+    closedAt: row.closed_at,
+    retentionHold: row.retention_hold,
+    retentionHoldReason: row.retention_hold_reason,
+    disputeResolvedAt: row.dispute_resolved_at,
   };
 }
 
 const APPOINTMENT_SELECT = `
   id, code, dog_name, size_bucket, breed, coat_state, service_package, notes, admin_notes,
   logistics_mode, neighborhood, pickup_address, owner_name, phone_e164, email, status, slot_id,
-  deposit_due_at, availability_slots(starts_at),
-  payments(id, amount_ars, method, status, external_reference, verified_at)
+  deposit_due_at, closed_at, retention_hold, retention_hold_reason, dispute_resolved_at,
+  availability_slots(starts_at),
+  payments(id, amount_ars, method, status, external_reference, verified_at, refunded_at, refund_amount_ars, refund_reference),
+  payment_receipts(id, status, uploaded_at, reference, original_mime_type, size_bytes, verified_at, rejected_at, rejection_reason, retention_until, deleted_at, deletion_attempts, last_deletion_error)
 `;
 
 export async function getPendingCount(): Promise<number> {
@@ -183,21 +260,33 @@ export async function getTodayAppointments(): Promise<AppointmentRow[]> {
 }
 
 export type RequestsFilter =
-  "pending_review" | "awaiting_deposit" | "confirmed" | "all";
+  "pending_review" | "receipts" | "awaiting_deposit" | "confirmed" | "all";
 
 export async function getRequestsList(
   filter: RequestsFilter,
 ): Promise<AppointmentRow[]> {
   const supabase = await getServerSupabaseClient();
   let query = supabase.from("appointments").select(APPOINTMENT_SELECT);
-  if (filter !== "all") query = query.eq("status", filter);
-  else query = query.in("status", ACTIVE_APPOINTMENT_STATUSES);
+  if (filter === "all") query = query.in("status", ACTIVE_APPOINTMENT_STATUSES);
+  else if (filter === "receipts")
+    query = query.eq("status", "awaiting_deposit");
+  else query = query.eq("status", filter);
 
   const { data, error } = await query;
   if (error || !data) return [];
   return (data as unknown as RawAppointment[])
     .map(mapAppointment)
-    .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+    .filter(
+      (a) =>
+        filter !== "receipts" ||
+        a.receipts.some((r) => r.status === "pending_verification"),
+    )
+    .sort((a, b) =>
+      // Receipts: earliest payment deadline first, so "Verificación vencida" leads.
+      filter === "receipts"
+        ? (a.depositDueAt ?? "").localeCompare(b.depositDueAt ?? "")
+        : a.startsAt.localeCompare(b.startsAt),
+    );
 }
 
 export async function getAppointmentById(
@@ -318,4 +407,143 @@ export async function getSlotsForDay(
         : null,
     };
   });
+}
+
+/** Appointments with at least one receipt waiting for the admin's decision. */
+export async function getPendingReceiptsCount(): Promise<number> {
+  const supabase = await getServerSupabaseClient();
+  const { data } = await supabase
+    .from("payment_receipts")
+    .select("appointment_id")
+    .eq("status", "pending_verification");
+  return new Set((data ?? []).map((r) => r.appointment_id as string)).size;
+}
+
+export interface EventRow {
+  id: string;
+  type: AppointmentEventType;
+  actor: "system" | "admin";
+  note: string | null;
+  createdAt: string;
+}
+
+export async function getAppointmentEvents(
+  appointmentId: string,
+): Promise<EventRow[]> {
+  const supabase = await getServerSupabaseClient();
+  const { data } = await supabase
+    .from("appointment_events")
+    .select("id, event_type, actor, note, created_at")
+    .eq("appointment_id", appointmentId)
+    .order("created_at", { ascending: false })
+    .limit(60);
+  return (data ?? []).map((e) => ({
+    id: e.id as string,
+    type: e.event_type as AppointmentEventType,
+    actor: e.actor as "system" | "admin",
+    note: (e.note as string | null) ?? null,
+    createdAt: e.created_at as string,
+  }));
+}
+
+export interface EmailLogRow {
+  id: string;
+  kind: string;
+  status: "pending" | "sent" | "failed";
+  attempts: number;
+  lastError: string | null;
+  createdAt: string;
+  sentAt: string | null;
+}
+
+export async function getAppointmentEmails(
+  appointmentId: string,
+): Promise<EmailLogRow[]> {
+  const supabase = await getServerSupabaseClient();
+  const { data } = await supabase
+    .from("email_outbox")
+    .select("id, kind, status, attempts, last_error, created_at, sent_at")
+    .eq("appointment_id", appointmentId)
+    .order("created_at", { ascending: false })
+    .limit(30);
+  return (data ?? []).map((e) => ({
+    id: e.id as string,
+    kind: e.kind as string,
+    status: e.status as "pending" | "sent" | "failed",
+    attempts: e.attempts as number,
+    lastError: (e.last_error as string | null) ?? null,
+    createdAt: e.created_at as string,
+    sentAt: (e.sent_at as string | null) ?? null,
+  }));
+}
+
+export interface MaintenanceOverview {
+  lastRun: {
+    source: string;
+    startedAt: string;
+    candidates: number;
+    deleted: number;
+    failed: number;
+    orphansRemoved: number;
+    error: string | null;
+  } | null;
+  dueNow: number;
+  stuckAfterRetries: number;
+  failedEmails: number;
+}
+
+export async function getMaintenanceOverview(): Promise<MaintenanceOverview> {
+  const supabase = await getServerSupabaseClient();
+  const nowIso = new Date().toISOString();
+  const [run, due, stuck, emails] = await Promise.all([
+    supabase
+      .from("receipt_purge_runs")
+      .select(
+        "source, started_at, candidates, deleted, failed, orphans_removed, error",
+      )
+      .order("started_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("payment_receipts")
+      .select("id", { count: "exact", head: true })
+      .neq("status", "deleted")
+      .not("storage_path", "is", null)
+      .lte("retention_until", nowIso),
+    supabase
+      .from("payment_receipts")
+      .select("id", { count: "exact", head: true })
+      .neq("status", "deleted")
+      .gte("deletion_attempts", 5),
+    supabase
+      .from("email_outbox")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "failed"),
+  ]);
+  const r = run.data;
+  return {
+    lastRun: r
+      ? {
+          source: r.source as string,
+          startedAt: r.started_at as string,
+          candidates: r.candidates as number,
+          deleted: r.deleted as number,
+          failed: r.failed as number,
+          orphansRemoved: r.orphans_removed as number,
+          error: (r.error as string | null) ?? null,
+        }
+      : null,
+    dueNow: due.count ?? 0,
+    stuckAfterRetries: stuck.count ?? 0,
+    failedEmails: emails.count ?? 0,
+  };
+}
+
+export async function getFailedEmailsCount(): Promise<number> {
+  const supabase = await getServerSupabaseClient();
+  const { count } = await supabase
+    .from("email_outbox")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "failed");
+  return count ?? 0;
 }

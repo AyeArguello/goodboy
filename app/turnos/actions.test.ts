@@ -8,10 +8,9 @@ vi.mock("@/lib/data/appointments", () => ({
     slotStartsAt: "2026-09-25T12:00:00.000Z",
   }),
 }));
-vi.mock("@/lib/notifications/mailer", () => ({
-  getMailer: () => ({
-    sendNewRequestEmail: vi.fn().mockResolvedValue(undefined),
-  }),
+const requestReceived = vi.fn().mockResolvedValue({ customer: "sent" });
+vi.mock("@/lib/notifications/dispatch", () => ({
+  getNotifier: () => ({ requestReceived }),
 }));
 
 const { submitBookingAction } = await import("./actions");
@@ -25,6 +24,7 @@ const validBase: BookingFormInput = {
   logisticsMode: "self",
   ownerName: "Carolina",
   phone: "3511234567",
+  email: "carolina@example.com",
   consentPrice: true,
   consentDeposit: true,
   consentPrivacy: true,
@@ -35,6 +35,31 @@ describe("submitBookingAction validation", () => {
     const result = await submitBookingAction({ ...validBase, dogName: "  " });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.fieldErrors.dogName).toBeTruthy();
+  });
+
+  it.each([
+    ["", "correo"],
+    ["   ", "correo"],
+    ["no-es-un-correo", "correo"],
+  ])("requires a valid email (%j)", async (email) => {
+    const result = await submitBookingAction({ ...validBase, email });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.fieldErrors.email).toContain("correo");
+  });
+
+  it("sends the request notifications through the outbox after a successful booking", async () => {
+    requestReceived.mockClear();
+    const result = await submitBookingAction(validBase);
+    expect(result).toEqual({ ok: true, code: "GB-TEST" });
+    expect(requestReceived).toHaveBeenCalledWith("id");
+  });
+
+  it("a notification failure never turns a successful booking into an error", async () => {
+    requestReceived.mockRejectedValueOnce(new Error("resend down"));
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const result = await submitBookingAction(validBase);
+    expect(result).toEqual({ ok: true, code: "GB-TEST" });
+    spy.mockRestore();
   });
 
   it("requires a valid 10-digit phone number", async () => {

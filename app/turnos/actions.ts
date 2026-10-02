@@ -3,8 +3,7 @@
 import { z } from "zod";
 import { bookAppointment } from "@/lib/data/appointments";
 import { normalizePhoneAr } from "@/lib/domain/phone";
-import { formatDayLabel, formatTimeLabel } from "@/lib/domain/datetime";
-import { getMailer } from "@/lib/notifications/mailer";
+import { getNotifier } from "@/lib/notifications/dispatch";
 import { CONSENT_KEYS, CONSENT_TEXT_VERSION } from "@/lib/domain/appointment";
 
 const bookingSchema = z
@@ -28,9 +27,9 @@ const bookingSchema = z
     email: z
       .string()
       .trim()
-      .email("Correo inválido.")
-      .optional()
-      .or(z.literal("")),
+      .min(1, "Escribí tu correo: ahí te mandamos las novedades de tu turno.")
+      .email("Revisá el correo: parece que le falta algo.")
+      .max(254, "Correo inválido."),
     consentPrice: z.boolean(),
     consentDeposit: z.boolean(),
     consentPrivacy: z.boolean(),
@@ -113,7 +112,7 @@ export async function submitBookingAction(
       v.logisticsMode === "pickup" ? (v.pickupAddress ?? null) : null,
     ownerName: v.ownerName,
     phoneE164: phone.e164,
-    email: v.email || null,
+    email: v.email,
     consents: CONSENT_KEYS.map((key) => ({
       key,
       version: CONSENT_TEXT_VERSION,
@@ -138,18 +137,13 @@ export async function submitBookingAction(
     return { ok: false, fieldErrors: {}, formError: "NETWORK" };
   }
 
-  // Best-effort: the booking already succeeded, so a notification failure
-  // must never turn into a customer-facing error.
+  // Best-effort: the booking already succeeded, so an email problem must
+  // never turn into a customer-facing error (the outbox records any failure
+  // so it can be retried without duplicating).
   try {
-    const slotStartsAt = new Date(result.slotStartsAt);
-    await getMailer().sendNewRequestEmail({
-      code: result.code,
-      dogName: v.dogName,
-      ownerName: v.ownerName,
-      slotLabel: `${formatDayLabel(slotStartsAt)} · ${formatTimeLabel(slotStartsAt)}`,
-    });
+    await getNotifier().requestReceived(result.appointmentId);
   } catch (err) {
-    console.error("Failed to send new-request notification email:", err);
+    console.error("Failed to dispatch request notifications:", err);
   }
 
   return { ok: true, code: result.code };

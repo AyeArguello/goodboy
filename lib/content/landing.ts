@@ -72,12 +72,12 @@ export const howItWorksSteps = [
   {
     n: "3",
     title: "Te aprobamos y pedimos la seña",
-    text: `Si la dueña aprueba tu solicitud, te pasamos los datos para pagar la seña de ARS ${businessConfig.deposit.amountArs.toLocaleString("es-AR")} (se descuenta del total).`,
+    text: `Si la dueña aprueba tu solicitud, te mandamos por email los datos para transferir la seña de ARS ${businessConfig.deposit.amountArs.toLocaleString("es-AR")} (se descuenta del total) y un enlace seguro para subir el comprobante.`,
   },
   {
     n: "4",
-    title: "Pagás la seña y queda confirmado",
-    text: "Por transferencia o Mercado Pago. El turno se confirma recién cuando registramos el pago.",
+    title: "Subís el comprobante y queda confirmado",
+    text: "Transferís la seña y subís una foto del comprobante. Lo verificamos a mano: el turno se confirma recién cuando lo verificamos, y te avisamos por email.",
   },
   {
     n: "5",
@@ -135,10 +135,9 @@ export function faqs(): { question: string; answer: string }[] {
         "No. Se paga recién si la dueña aprueba tu solicitud, y se descuenta del total del servicio.",
     },
     {
-      question: "¿Hay recargo si pago la seña con tarjeta?",
-      answer: businessConfig.deposit.paymentOptions.enabled
-        ? "Sí, pagando con tarjeta vía Mercado Pago hay un recargo según la cantidad de cuotas, informado antes de pagar. Efectivo y transferencia no tienen recargo."
-        : "Por ahora no se cobra ningún recargo por pagar con tarjeta — estamos revisando esa opción con un profesional antes de habilitarla. Efectivo y transferencia tampoco tienen recargo.",
+      question: "¿Cómo se paga la seña?",
+      answer:
+        "Por transferencia bancaria, sin recargo. Cuando aprobamos tu solicitud te mandamos por email los datos para transferir y un enlace para subir el comprobante. Lo verificamos a mano y te avisamos por email cuando el turno queda confirmado.",
     },
     {
       question: "¿Qué pasa si necesito cancelar?",

@@ -1,7 +1,11 @@
 "use server";
 
 import { z } from "zod";
-import { lookupAppointmentStatus } from "@/lib/data/appointments";
+import {
+  lookupAppointmentStatus,
+  lookupReceiptState,
+  type ReceiptState,
+} from "@/lib/data/appointments";
 import { isValidAppointmentCodeFormat } from "@/lib/domain/code";
 
 const codeSchema = z.string().trim().min(1, "Ingresá tu código de solicitud.");
@@ -15,6 +19,7 @@ export type CheckStatusResult =
       previousStartsAt: string | null;
       depositAmountArs: number;
       depositDueAt: string | null;
+      receiptState: ReceiptState;
     }
   | { ok: false; error: string };
 
@@ -38,6 +43,11 @@ export async function checkStatusAction(
     return { ok: false, error: "No encontramos una solicitud con ese código." };
   }
 
+  const receiptState =
+    result.status === "awaiting_deposit"
+      ? await lookupReceiptState(parsed.data)
+      : "none";
+
   return {
     ok: true,
     code: result.code,
@@ -46,5 +56,6 @@ export async function checkStatusAction(
     previousStartsAt: result.previousStartsAt,
     depositAmountArs: result.depositAmountArs,
     depositDueAt: result.depositDueAt,
+    receiptState,
   };
 }

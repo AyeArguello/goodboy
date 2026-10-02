@@ -31,22 +31,30 @@ const STATUS_COPY: Record<
 > = {
   pending_review: {
     text: () =>
-      "La dueña todavía está revisando tu solicitud. Te escribe por WhatsApp.",
+      "Estamos revisando tu solicitud. Cuando la resolvamos te avisamos por email.",
     ctaLabel: "Escribir por WhatsApp",
     ctaHref: () => businessWhatsAppLink(),
   },
   awaiting_deposit: {
-    text: (r) =>
-      `Tu solicitud fue aprobada. Para confirmar el turno necesitamos la seña de ARS ${r.depositAmountArs.toLocaleString("es-AR")}` +
-      (r.depositDueAt
-        ? ` antes del ${whenLabel(r.depositDueAt)}. Te pasamos los datos por WhatsApp.`
-        : ". Te pasamos los datos por WhatsApp."),
-    ctaLabel: "Coordinar la seña por WhatsApp",
+    text: (r) => {
+      if (r.receiptState === "pending_verification") {
+        return "Comprobante recibido, pendiente de verificación. Lo revisamos a mano y te avisamos por email cuando el turno quede confirmado.";
+      }
+      if (r.receiptState === "rejected") {
+        return "No pudimos verificar tu comprobante. Revisá tu email: ahí te contamos el motivo y te dejamos un enlace para subir uno nuevo.";
+      }
+      return (
+        `Tu solicitud fue aprobada. Para confirmar el turno transferí la seña de ARS ${r.depositAmountArs.toLocaleString("es-AR")}` +
+        (r.depositDueAt ? ` antes del ${whenLabel(r.depositDueAt)}` : "") +
+        " y subí el comprobante con el enlace que te mandamos por email."
+      );
+    },
+    ctaLabel: "¿No encontrás el email? Escribinos por WhatsApp",
     ctaHref: () => businessWhatsAppLink(),
   },
   confirmed: {
     text: () =>
-      "Turno confirmado. Si necesitás cambiar algo, avisá por WhatsApp con anticipación.",
+      "Turno confirmado: verificamos tu seña. Si necesitás cambiar algo, avisanos con anticipación.",
     ctaLabel: "Cómo llegar",
     ctaHref: () =>
       `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
@@ -69,7 +77,7 @@ const STATUS_COPY: Record<
   },
   cancelled_by_business: {
     text: () =>
-      "Tuvimos que cancelar este turno. Escribinos por WhatsApp para coordinar uno nuevo.",
+      "Tuvimos que cancelar este turno; te avisamos por email. Escribinos por WhatsApp para coordinar uno nuevo.",
     ctaLabel: "Escribir por WhatsApp",
     ctaHref: () => businessWhatsAppLink(),
   },
@@ -126,7 +134,7 @@ export function StatusLookup() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <TextField
           label="Código de solicitud"
-          placeholder="GB-XXXX"
+          placeholder="GB-XXXXXXXX"
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
           error={!result?.ok ? result?.error : undefined}
