@@ -7,6 +7,19 @@ import {
   validAppointmentPayload,
 } from "./helpers";
 
+/**
+ * Makes any normal slot count as "inside the 48h cutoff" by widening the
+ * cutoff, so these tests never depend on the weekday they run on (a 22h
+ * window can contain no grid slot, e.g. on a Friday evening).
+ */
+async function insideCutoff() {
+  const { error } = await serviceClient()
+    .from("business_settings")
+    .update({ cancellation_cutoff_hours: 24 * 60 })
+    .eq("id", true);
+  if (error) throw error;
+}
+
 /** Exercises the v2 deposit lifecycle (pending_review -> awaiting_deposit -> confirmed). */
 async function createPendingRequest(
   minHoursFromNow = 48,
@@ -149,7 +162,8 @@ describe("deposit lifecycle", () => {
     const svc = serviceClient();
     // Bounded to (24, 47]h so it can never accidentally land outside the
     // 48h cutoff, whichever grid slot the scan finds first.
-    const { appointmentId } = await createPendingRequest(25, 47);
+    const { appointmentId } = await createPendingRequest(96);
+    await insideCutoff();
     await admin.rpc("admin_approve_request", {
       p_appointment_id: appointmentId,
     });
@@ -175,7 +189,8 @@ describe("deposit lifecycle", () => {
 
   it("business cancelling a confirmed appointment inside the 48h cutoff never forfeits the deposit (regression for the audit's bug crítico)", async () => {
     const svc = serviceClient();
-    const { appointmentId } = await createPendingRequest(25, 47);
+    const { appointmentId } = await createPendingRequest(96);
+    await insideCutoff();
     await admin.rpc("admin_approve_request", {
       p_appointment_id: appointmentId,
     });

@@ -10,6 +10,8 @@ const baseURL = `http://localhost:${PORT}`;
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
+  // next dev compiles routes and Server Actions on first use, which is slow on CI.
+  expect: { timeout: process.env.CI ? 20_000 : 5_000 },
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? "github" : "list",

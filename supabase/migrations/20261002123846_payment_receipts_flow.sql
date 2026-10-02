@@ -374,32 +374,13 @@ create trigger appointments_after_status_change
 
 -- ---------------------------------------------------------------------
 -- 11. Slot occupancy: an awaiting_deposit appointment whose payment window
---     lapsed still holds its slot while a receipt is waiting for the admin's
---     decision (it must not expire — and free the slot — just because the
---     verification is slow).
+--     lapsed still holds its slot while a receipt that was registered inside
+--     that window is waiting for the admin's decision (it must not expire — and
+--     free the slot — just because the verification is slow). The rule is
+--     written inline (not as a helper function) in public_availability() and
+--     request_appointment() so each check runs in the same statement snapshot
+--     as the slot lock.
 -- ---------------------------------------------------------------------
-create or replace function appointment_holds_slot(
-  p_status appointment_status,
-  p_deposit_due_at timestamptz,
-  p_appointment_id uuid
-) returns boolean
-language sql stable set search_path = public as $$
-  select p_status in ('pending_review', 'confirmed', 'reschedule_requested')
-    or (
-      p_status = 'awaiting_deposit'
-      and (
-        p_deposit_due_at is null
-        or p_deposit_due_at > now()
-        or exists (
-          select 1 from payment_receipts r
-          where r.appointment_id = p_appointment_id
-            and r.status = 'pending_verification'
-            and r.uploaded_at <= p_deposit_due_at
-        )
-      )
-    );
-$$;
-
 create or replace function public_availability()
 returns table (slot_id uuid, starts_at timestamptz, date_key text)
 language sql stable security definer set search_path = public as $$
@@ -415,7 +396,22 @@ language sql stable security definer set search_path = public as $$
     and not exists (
       select 1 from appointments a
       where a.slot_id = s.id
-        and appointment_holds_slot(a.status, a.deposit_due_at, a.id)
+        and (
+          a.status in ('pending_review', 'confirmed', 'reschedule_requested')
+          or (
+            a.status = 'awaiting_deposit'
+            and (
+              a.deposit_due_at is null
+              or a.deposit_due_at > now()
+              or exists (
+                select 1 from payment_receipts r
+                where r.appointment_id = a.id
+                  and r.status = 'pending_verification'
+                  and r.uploaded_at <= a.deposit_due_at
+              )
+            )
+          )
+        )
     )
   order by s.starts_at;
 $$;
@@ -1137,7 +1133,7 @@ $$;
 --     20261001194349_fix_request_appointment_pgcrypto.sql) with exactly three
 --     changes — the customer's email is required, the inline expiry sweep
 --     skips an appointment whose receipt is waiting for the admin, and slot /
---     day-cap occupancy goes through appointment_holds_slot().
+--     day-cap occupancy use the same inline rule as public_availability().
 -- ---------------------------------------------------------------------
 create or replace function request_appointment(
   p_slot_id uuid,
@@ -1167,6 +1163,7 @@ declare
   v_attempts int := 0;
   v_required_consents text[] := array['orientative_price', 'deposit_and_cancellation', 'privacy'];
   v_consent_count int;
+  v_constraint text;
 begin
   perform enforce_rate_limit('booking:' || p_client_key, 5, interval '10 minutes');
 
@@ -1262,7 +1259,22 @@ begin
   if exists (
     select 1 from appointments a
     where a.slot_id = p_slot_id
-      and appointment_holds_slot(a.status, a.deposit_due_at, a.id)
+      and (
+        a.status in ('pending_review', 'confirmed', 'reschedule_requested')
+        or (
+          a.status = 'awaiting_deposit'
+          and (
+            a.deposit_due_at is null
+            or a.deposit_due_at > now()
+            or exists (
+              select 1 from payment_receipts r
+              where r.appointment_id = a.id
+                and r.status = 'pending_verification'
+                and r.uploaded_at <= a.deposit_due_at
+            )
+          )
+        )
+      )
   ) then
     raise exception 'SLOT_TAKEN' using errcode = 'P0001';
   end if;
@@ -1270,7 +1282,22 @@ begin
   select count(*) into v_active_count
   from appointments a
   join availability_slots s on s.id = a.slot_id
-  where appointment_holds_slot(a.status, a.deposit_due_at, a.id)
+  where (
+    a.status in ('pending_review', 'confirmed', 'reschedule_requested')
+    or (
+      a.status = 'awaiting_deposit'
+      and (
+        a.deposit_due_at is null
+        or a.deposit_due_at > now()
+        or exists (
+          select 1 from payment_receipts r
+          where r.appointment_id = a.id
+            and r.status = 'pending_verification'
+            and r.uploaded_at <= a.deposit_due_at
+        )
+      )
+    )
+  )
     and (s.starts_at at time zone v_settings.timezone)::date = v_date;
 
   if v_active_count >= max_active_per_day_for(v_slot.starts_at, v_settings.timezone) then
@@ -1302,6 +1329,7 @@ begin
     end if;
   end loop;
 
+  begin
   insert into appointments (
     code, slot_id, dog_name, size_bucket, breed, coat_state, service_package, notes,
     logistics_mode, neighborhood, pickup_address, owner_name, phone_e164, email, consents, status
@@ -1310,6 +1338,13 @@ begin
     p_logistics_mode, p_neighborhood, p_pickup_address, p_owner_name, p_phone_e164, p_email,
     p_consents, 'pending_review'
   ) returning id into v_appointment_id;
+  exception when unique_violation then
+    get stacked diagnostics v_constraint = constraint_name;
+    if v_constraint = 'appointments_active_per_slot_idx' then
+      raise exception 'SLOT_TAKEN' using errcode = 'P0001';
+    end if;
+    raise;
+  end;
 
   insert into appointment_events (appointment_id, event_type, actor)
   values (v_appointment_id, 'created', 'system');
@@ -1334,8 +1369,6 @@ revoke all on function appointments_require_email() from public, anon, authentic
 revoke all on function appointments_track_closure() from public, anon, authenticated;
 revoke all on function appointments_after_status_change() from public, anon, authenticated;
 revoke all on function recompute_receipt_retention(uuid) from public, anon, authenticated;
-revoke all on function appointment_holds_slot(appointment_status, timestamptz, uuid)
-  from public, anon, authenticated;
 
 -- server-side (service_role only)
 revoke all on function get_upload_context(text) from public, anon, authenticated;

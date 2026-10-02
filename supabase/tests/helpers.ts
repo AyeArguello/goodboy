@@ -94,6 +94,16 @@ export async function resetTestData(): Promise<void> {
   const svc = serviceClient();
   await ensureReceiptsBucket(svc);
   await emptyReceiptsBucket(svc);
+  // Tests may bend the business rules to be independent of the day of the week.
+  const { error: settingsError } = await svc
+    .from("business_settings")
+    .update({ min_lead_hours: 24, cancellation_cutoff_hours: 48 })
+    .eq("id", true);
+  if (settingsError) {
+    throw new Error(
+      `resetTestData: could not restore business_settings: ${settingsError.message}`,
+    );
+  }
   const tables = [
     ["email_outbox", "id", NO_MATCH_UUID],
     ["receipt_purge_runs", "id", NO_MATCH_UUID],
@@ -293,14 +303,22 @@ export async function createFutureSlot(
   maxHoursFromNow?: number,
 ): Promise<string> {
   const svc = serviceClient();
-  const startsAt = nextValidSlotStartsAt(minHoursFromNow, maxHoursFromNow);
-  const { data, error } = await svc
-    .from("availability_slots")
-    .insert({ starts_at: startsAt, is_published: true })
-    .select("id")
-    .single();
-  if (error) throw error;
-  return data.id as string;
+  // Two calls in one test must not collide on the same grid time: when the
+  // first valid slot is taken, move on to the next one inside the window.
+  for (let step = 0; step < 40; step++) {
+    const startsAt = nextValidSlotStartsAt(
+      minHoursFromNow + step,
+      maxHoursFromNow,
+    );
+    const { data, error } = await svc
+      .from("availability_slots")
+      .insert({ starts_at: startsAt, is_published: true })
+      .select("id")
+      .single();
+    if (!error) return data.id as string;
+    if (error.code !== "23505") throw error;
+  }
+  throw new Error("createFutureSlot: no free grid slot in the window");
 }
 
 export const validAppointmentPayload = (slotId: string) => ({

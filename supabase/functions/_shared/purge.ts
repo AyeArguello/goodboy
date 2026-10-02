@@ -212,7 +212,7 @@ export function createSupabasePurgeDeps(
 
     async removeObject(path) {
       const { error } = await bucket().remove([path]);
-      if (error) throw new Error(`storage.remove: ${error.message}`);
+      if (error) throw new Error(`storage.remove: ${JSON.stringify(error)}`);
     },
 
     async objectExists(path) {
@@ -244,7 +244,7 @@ export function createSupabasePurgeDeps(
           limit: LIST_PAGE,
           offset: page * LIST_PAGE,
         });
-        if (error) throw new Error(`storage.list: ${error.message}`);
+        if (error) throw new Error(`storage.list: ${JSON.stringify(error)}`);
         const items = data ?? [];
         const old = items.filter(
           (item) =>
@@ -268,7 +268,7 @@ export function createSupabasePurgeDeps(
           if (orphans.length > 0) {
             const { error: removeError } = await bucket().remove(orphans);
             if (removeError)
-              throw new Error(`storage.remove: ${removeError.message}`);
+              throw new Error(`storage.remove: ${JSON.stringify(removeError)}`);
             removed += orphans.length;
           }
         }

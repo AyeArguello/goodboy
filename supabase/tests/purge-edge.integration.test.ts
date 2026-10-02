@@ -88,7 +88,11 @@ describe("purge-payment-receipts Edge Function (Deno)", () => {
       error: string | null;
     };
     expect(res.status, JSON.stringify(body)).toBe(200);
-    expect(body).toMatchObject({ failed: 0, source: "cron", error: null });
+    expect(body, JSON.stringify(body)).toMatchObject({
+      failed: 0,
+      source: "cron",
+      error: null,
+    });
     expect(body.deleted).toBeGreaterThanOrEqual(1);
 
     expect(await objectExists(path)).toBe(false);

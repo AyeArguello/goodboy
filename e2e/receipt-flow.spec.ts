@@ -47,6 +47,16 @@ const TIMES: Record<string, string> = {
   "mobile-chrome": "13:30",
 };
 
+// Booking (5 / 10 min) and status lookups (10 / min) are rate limited by caller
+// IP; every test attempt gets its own address so retries and the two projects
+// running in parallel never starve each other.
+test.beforeEach(async ({ page }) => {
+  const octet = () => Math.floor(Math.random() * 250) + 1;
+  await page.setExtraHTTPHeaders({
+    "x-forwarded-for": `10.${octet()}.${octet()}.${octet()}`,
+  });
+});
+
 let supabaseUp = false;
 test.beforeAll(async () => {
   try {

@@ -37,6 +37,17 @@ beforeAll(async () => {
   admin = await createTestAdminClient();
 });
 
+/** Time travel: the retention date has passed. Fails loudly if the update did not apply. */
+async function dueNow(appointmentId: string) {
+  const { data, error } = await serviceClient()
+    .from("payment_receipts")
+    .update({ retention_until: new Date(Date.now() - 1000).toISOString() })
+    .eq("appointment_id", appointmentId)
+    .select("id");
+  expect(error, JSON.stringify(error)).toBeNull();
+  expect(data?.length ?? 0).toBeGreaterThan(0);
+}
+
 const asSupabaseLike = () => serviceClient() as unknown as SupabaseLike;
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -61,6 +72,21 @@ async function confirmedWithReceipt() {
   expect(error).toBeNull();
   return { ...a, token };
 }
+
+describe("receipts: environment sanity", () => {
+  it("the local Storage list API and the purge RPC work", async () => {
+    const svc = serviceClient();
+    const listed = await svc.storage
+      .from(RECEIPTS_BUCKET)
+      .list("r", { limit: 1000, offset: 0 });
+    expect(listed.error, JSON.stringify(listed.error)).toBeNull();
+    const candidates = await svc.rpc("purge_candidates", {
+      p_limit: 10,
+      p_max_attempts: 3,
+    });
+    expect(candidates.error, JSON.stringify(candidates.error)).toBeNull();
+  });
+});
 
 describe("receipts: access control", () => {
   it("anon cannot list, read, update or delete receipts, tokens, outbox or purge runs", async () => {
@@ -316,14 +342,25 @@ describe("receipts: file validation", () => {
   it("rejects a disguised file (a PDF sent as image/jpeg) and removes the stored object", async () => {
     const a = await awaitingDeposit(admin);
     const token = await issueToken(admin, a.appointmentId);
-    const { prep } = await prepareAndUpload(token, [
-      {
-        name: "pago.jpg",
-        type: "image/jpeg",
-        bytes: PDF,
-        uploadType: "image/jpeg",
-      },
-    ]);
+    let prep;
+    try {
+      ({ prep } = await prepareAndUpload(token, [
+        {
+          name: "pago.jpg",
+          type: "image/jpeg",
+          bytes: PDF,
+          uploadType: "image/jpeg",
+        },
+      ]));
+    } catch (err) {
+      // Recent Storage versions sniff the content of buckets restricted by MIME
+      // type and refuse a PDF sent as image/jpeg themselves — a second layer in
+      // front of ours. Nothing may have been stored or registered either way.
+      expect((err as Error).name).toBe("StorageApiError");
+      expect(await receiptsOf(a.appointmentId)).toHaveLength(0);
+      expect((await submitReceipt(token)).ok).toBe(true); // the link is still usable
+      return;
+    }
     if (!prep.ok) throw new Error("prepare failed");
     const path = prep.uploads[0]!.path;
     expect(await objectExists(path)).toBe(true);
@@ -536,14 +573,14 @@ describe("receipts: retention and purge", () => {
     expect(await objectExists(path)).toBe(true);
 
     // 30 days later
-    await serviceClient()
-      .from("payment_receipts")
-      .update({ retention_until: new Date(Date.now() - 1000).toISOString() })
-      .eq("appointment_id", a.appointmentId);
+    await dueNow(a.appointmentId);
     const summary = await runPurge(createSupabasePurgeDeps(asSupabaseLike()), {
       source: "cron",
     });
-    expect(summary).toMatchObject({ failed: 0, error: null });
+    expect(summary, JSON.stringify(summary)).toMatchObject({
+      failed: 0,
+      error: null,
+    });
     expect(summary.deleted).toBeGreaterThanOrEqual(1);
 
     expect(await objectExists(path)).toBe(false);
@@ -608,10 +645,7 @@ describe("receipts: retention and purge", () => {
       ).error,
     ).toBeNull();
 
-    await serviceClient()
-      .from("payment_receipts")
-      .update({ retention_until: new Date(Date.now() - 1000).toISOString() })
-      .eq("appointment_id", a.appointmentId);
+    await dueNow(a.appointmentId);
     const held = await runPurge(createSupabasePurgeDeps(asSupabaseLike()), {
       source: "cron",
     });
@@ -667,10 +701,7 @@ describe("receipts: retention and purge", () => {
       p_new_status: "completed",
     });
     const path = (await receiptsOf(a.appointmentId))[0]!.storage_path as string;
-    await serviceClient()
-      .from("payment_receipts")
-      .update({ retention_until: new Date(Date.now() - 1000).toISOString() })
-      .eq("appointment_id", a.appointmentId);
+    await dueNow(a.appointmentId);
 
     const real = createSupabasePurgeDeps(asSupabaseLike());
     const failing = {
@@ -680,7 +711,7 @@ describe("receipts: retention and purge", () => {
       },
     };
     const first = await runPurge(failing, { source: "cron", maxAttempts: 3 });
-    expect(first.failed).toBeGreaterThanOrEqual(1);
+    expect(first.failed, JSON.stringify(first)).toBeGreaterThanOrEqual(1);
     const [afterFail] = await receiptsOf(a.appointmentId);
     expect(afterFail).toMatchObject({
       status: "verified",

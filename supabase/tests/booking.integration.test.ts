@@ -26,7 +26,13 @@ describe("request_appointment", () => {
   it("rejects a slot less than 24h away (server-side, regardless of client input)", async () => {
     // Bounded above by 23h so the pick can never accidentally land past the
     // 24h minimum-lead-time cutoff, whichever grid slot the scan finds first.
-    const slotId = await createFutureSlot(1, 23);
+    // A normal slot made "too close" by raising the lead time, so the test does
+    // not depend on which weekday it runs (a 23h window can hold no grid slot).
+    const slotId = await createFutureSlot(48);
+    await serviceClient()
+      .from("business_settings")
+      .update({ min_lead_hours: 24 * 60 })
+      .eq("id", true);
     const anon = anonClient();
     const { error } = await anon.rpc(
       "request_appointment",
