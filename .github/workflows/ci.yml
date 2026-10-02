@@ -125,9 +125,11 @@ jobs:
         run: cat edge-functions.log || true
 
       - name: Install Playwright browsers
+        if: always()
         run: pnpm exec playwright install --with-deps chromium
 
       - name: E2E (smoke + full receipt journey)
+        if: always()
         run: pnpm exec playwright test --reporter=github,json
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: e2e-results.json
