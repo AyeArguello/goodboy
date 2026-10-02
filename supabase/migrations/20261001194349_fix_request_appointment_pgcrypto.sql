@@ -1,8 +1,10 @@
 -- request_appointment runs with `set search_path = public`, but Supabase
 -- installs pgcrypto in the `extensions` schema, so the unqualified
 -- gen_random_bytes() call failed with 42883 (function does not exist) and no
--- booking could be created. This recreates the current function unchanged
--- except for schema-qualifying that one call.
+-- booking could be created. Behind it, the code-uniqueness check used a bare
+-- `code`, which collides with the `code` OUT parameter (42702 ambiguous
+-- column). This recreates the current function unchanged except for
+-- schema-qualifying that call and aliasing `appointments` in that check.
 
 create or replace function request_appointment(
   p_slot_id uuid,
@@ -156,7 +158,11 @@ begin
       )
       from generate_series(1, 8)
     );
-    exit when not exists (select 1 from appointments where code = v_code);
+    exit when not exists (
+      select 1
+      from appointments as a
+      where a.code = v_code
+    );
     v_attempts := v_attempts + 1;
     if v_attempts > 10 then
       raise exception 'CODE_GENERATION_FAILED' using errcode = 'P0001';
