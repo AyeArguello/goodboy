@@ -157,13 +157,9 @@ export interface SupabaseLike {
       remove(
         paths: string[],
       ): PromiseLike<{ data: unknown; error: { message: string } | null }>;
-      exists(path: string): PromiseLike<{
-        data: boolean | null;
-        error: { message: string } | null;
-      }>;
       list(
         path?: string,
-        options?: { limit?: number; offset?: number },
+        options?: { limit?: number; offset?: number; search?: string },
       ): PromiseLike<{
         data: { name: string; created_at: string | null }[] | null;
         error: { message: string } | null;
@@ -216,9 +212,17 @@ export function createSupabasePurgeDeps(
     },
 
     async objectExists(path) {
-      const { data, error } = await bucket().exists(path);
-      if (error) throw new Error(`storage.exists: ${error.message}`);
-      return data === true;
+      // list() instead of exists(): HEAD on a missing object answers 400 on
+      // some Storage versions, which is indistinguishable from a real failure.
+      const slash = path.lastIndexOf("/");
+      const dir = slash >= 0 ? path.slice(0, slash) : "";
+      const name = path.slice(slash + 1);
+      const { data, error } = await bucket().list(dir, {
+        limit: 100,
+        search: name,
+      });
+      if (error) throw new Error(`storage.list: ${JSON.stringify(error)}`);
+      return (data ?? []).some((item) => item.name === name);
     },
 
     async markDeleted(id) {

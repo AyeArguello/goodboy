@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { formatDayLabel } from "../lib/domain/datetime";
 import { createHash, randomBytes } from "node:crypto";
 import {
@@ -56,6 +56,19 @@ test.beforeEach(async ({ page }) => {
     "x-forwarded-for": `10.${octet()}.${octet()}.${octet()}`,
   });
 });
+
+/**
+ * Looks a code up on the status page. next dev hydrates late on a cold route, and a
+ * click before hydration submits the form natively (and empties it), so the
+ * fill + click + check is retried until the interactive page answers.
+ */
+async function lookupStatus(page: Page, code: string, expected: () => Locator) {
+  await expect(async () => {
+    await page.getByLabel("Código de solicitud").fill(code);
+    await page.getByRole("button", { name: "Consultar" }).click();
+    await expect(expected()).toBeVisible({ timeout: 4000 });
+  }).toPass({ timeout: 60_000 });
+}
 
 let supabaseUp = false;
 test.beforeAll(async () => {
@@ -202,11 +215,9 @@ test.describe("receipt journey (needs Supabase)", () => {
 
       // 2. Status page: pending review.
       await page.goto("/turnos/estado");
-      await page.getByLabel("Código de solicitud").fill(code);
-      await page.getByRole("button", { name: "Consultar" }).click();
-      await expect(
+      await lookupStatus(page, code, () =>
         page.getByText("Pendiente de revisión").first(),
-      ).toBeVisible();
+      );
 
       // 3. The admin approves; the app would now email the link — issue it the same way.
       expect(
@@ -226,9 +237,9 @@ test.describe("receipt journey (needs Supabase)", () => {
         ).error,
       ).toBeNull();
 
-      await page.getByLabel("Código de solicitud").fill(code);
-      await page.getByRole("button", { name: "Consultar" }).click();
-      await expect(page.getByText("Esperando seña").first()).toBeVisible();
+      await lookupStatus(page, code, () =>
+        page.getByText("Esperando seña").first(),
+      );
 
       // 4. Secure link: a bad file is rejected with a clear message, then a real image is uploaded.
       await page.goto(`/turnos/comprobante#t=${token}`);
@@ -293,13 +304,11 @@ test.describe("receipt journey (needs Supabase)", () => {
 
       // 5. Status page now says so.
       await page.goto("/turnos/estado");
-      await page.getByLabel("Código de solicitud").fill(code);
-      await page.getByRole("button", { name: "Consultar" }).click();
-      await expect(
+      await lookupStatus(page, code, () =>
         page
           .getByText(/Comprobante recibido, pendiente de verificación/)
           .first(),
-      ).toBeVisible();
+      );
 
       // 6. The admin verifies and confirms.
       expect(
@@ -309,9 +318,9 @@ test.describe("receipt journey (needs Supabase)", () => {
           })
         ).error,
       ).toBeNull();
-      await page.getByLabel("Código de solicitud").fill(code);
-      await page.getByRole("button", { name: "Consultar" }).click();
-      await expect(page.getByText("Confirmado").first()).toBeVisible();
+      await lookupStatus(page, code, () =>
+        page.getByText("Confirmado").first(),
+      );
       await expect(page.getByText(/Turno confirmado/).first()).toBeVisible();
 
       // The old link now says the turn is already confirmed.

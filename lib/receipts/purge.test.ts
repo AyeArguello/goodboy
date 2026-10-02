@@ -215,8 +215,14 @@ describe("createSupabasePurgeDeps", () => {
             paths.forEach((p) => objects.delete(p));
             return { data: [], error: null };
           },
-          exists: async (p: string) => ({ data: objects.has(p), error: null }),
-          list: async () => ({ data: over.listed ?? [], error: null }),
+          list: async (dir?: string, opts?: { search?: string }) => ({
+            data: opts?.search
+              ? [...objects]
+                  .filter((p) => p === `${dir}/${opts.search}`)
+                  .map(() => ({ name: opts.search!, created_at: null }))
+              : (over.listed ?? []),
+            error: null,
+          }),
         }),
       },
     };

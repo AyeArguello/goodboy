@@ -146,11 +146,13 @@ export async function submitReceipt(
 }
 
 export async function objectExists(path: string): Promise<boolean> {
+  const slash = path.lastIndexOf("/");
+  const name = path.slice(slash + 1);
   const { data, error } = await serviceClient()
     .storage.from(RECEIPTS_BUCKET)
-    .exists(path);
+    .list(path.slice(0, slash), { limit: 100, search: name });
   if (error) throw error;
-  return data === true;
+  return (data ?? []).some((item) => item.name === name);
 }
 
 export async function receiptsOf(appointmentId: string) {
