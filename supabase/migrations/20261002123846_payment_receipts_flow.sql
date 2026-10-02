@@ -1424,3 +1424,44 @@ grant execute on function public_availability() to anon, authenticated;
 grant execute on function request_appointment(
   uuid, text, size_bucket, text, coat_state, service_package, text, logistics_mode, text, text, text, text, text, jsonb, text
 ) to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Fix: get_appointment_status has failed since it was created, with
+-- `column reference "deposit_amount_ars" is ambiguous` (the unqualified column
+-- in the business_settings subselect collides with the OUT parameter of the
+-- same name), so the public status page always answered "not found". Same
+-- body, with the column qualified.
+-- ---------------------------------------------------------------------------
+create or replace function get_appointment_status(p_code text, p_client_key text default 'unknown')
+returns table (
+  code text,
+  status appointment_status,
+  starts_at timestamptz,
+  previous_starts_at timestamptz,
+  deposit_amount_ars numeric,
+  deposit_due_at timestamptz
+)
+language plpgsql security definer set search_path = public as $$
+begin
+  perform enforce_rate_limit('status:' || p_client_key, 10, interval '1 minute');
+
+  return query
+  select
+    a.code,
+    a.status,
+    s.starts_at,
+    (
+      select prev_slot.starts_at
+      from appointment_events e
+      join availability_slots prev_slot on prev_slot.id = e.from_slot_id
+      where e.appointment_id = a.id and e.event_type = 'rescheduled'
+      order by e.created_at desc
+      limit 1
+    ),
+    (select bs.deposit_amount_ars from business_settings bs where bs.id = true),
+    a.deposit_due_at
+  from appointments a
+  join availability_slots s on s.id = a.slot_id
+  where a.code = upper(trim(p_code));
+end;
+$$;

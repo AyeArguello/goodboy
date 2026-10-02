@@ -23,6 +23,23 @@ describe("request_appointment", () => {
     );
   });
 
+  it("get_appointment_status answers for the public status page", async () => {
+    const slotId = await createFutureSlot(48);
+    const anon = anonClient();
+    const { data: booked, error: bookError } = await anon.rpc(
+      "request_appointment",
+      validAppointmentPayload(slotId),
+    );
+    expect(bookError).toBeNull();
+    const code = booked?.[0]?.code as string;
+    const { data, error } = await anon.rpc("get_appointment_status", {
+      p_code: code,
+      p_client_key: "status-test",
+    });
+    expect(error, JSON.stringify(error)).toBeNull();
+    expect(data?.[0]).toMatchObject({ code, status: "pending_review" });
+  });
+
   it("rejects a slot less than 24h away (server-side, regardless of client input)", async () => {
     // Bounded above by 23h so the pick can never accidentally land past the
     // 24h minimum-lead-time cutoff, whichever grid slot the scan finds first.
