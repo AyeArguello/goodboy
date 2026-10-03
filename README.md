@@ -21,8 +21,8 @@ Landing + turnero (reserva de turnos) + panel admin para una peluquería canina.
 | Resend                | 6.28.1 (opcional)                          |
 
 > Este proyecto corre sobre Next.js 16, que tiene cambios importantes respecto a versiones anteriores
-> (Turbopack por defecto, `params`/`searchParams` asíncronos, `middleware.ts` renombrado a `proxy.ts`,
-> `fetch` sin cache por defecto). Ver `node_modules/next/dist/docs/01-app/02-guides/upgrading/version-16.md`
+> (Turbopack por defecto, `params`/`searchParams` asíncronos, `middleware.ts` renombrado a `proxy.ts` — aquí se mantiene
+> `middleware.ts` por Netlify, ver "Deploy"; `fetch` sin cache por defecto). Ver `node_modules/next/dist/docs/01-app/02-guides/upgrading/version-16.md`
 > antes de tocar convenciones de rutas/caching.
 
 ## Desarrollo
@@ -91,8 +91,19 @@ Turnstile, ambas apagadas).
 
 ## Deploy
 
-- Crear **dos** proyectos separados (preview y producción) tanto en el hosting como en Supabase — nunca
-  compartir base de datos entre ambos.
+Hosting: **Netlify (plan Free)** con el adaptador automático de Next.js (no hay plugin ni directorio de
+publicación en `netlify.toml`). El procedimiento completo, el inventario de variables y los límites del
+plan están en [`docs/deploy-payment-receipts-production.md`](docs/deploy-payment-receipts-production.md).
+
+- Netlify Free: 300 créditos por mes (15 por despliegue a producción), sin cargos automáticos; al agotarlos
+  el sitio se pausa hasta el siguiente ciclo. Netlify Free permite proyectos comerciales. No desplegar a producción en cada commit.
+- El middleware del panel es `middleware.ts` (runtime edge) y no `proxy.ts`: el adaptador de Netlify aún
+  no puede empaquetar el proxy de Node.js (opennextjs/opennextjs-netlify#3575). El aviso de deprecación en
+  `next build` es esperado.
+- Todas las variables obligatorias (`.env.example`, y el detalle en la guía de deploy) deben existir en los
+  contextos Production **y** Deploy Preview de Netlify: la puerta de producción corre en cualquier build.
+- Hay un único proyecto de Supabase (producción). Un Deploy Preview con sus claves escribe en esa base: usarlo
+  solo para los smoke tests y limpiar los datos de prueba, o crear un segundo proyecto para previews.
 - Aplicar migraciones explícitamente (`supabase db push`) antes de cada release, nunca automáticamente
   contra producción sin revisión.
 - Seed solo en preview.

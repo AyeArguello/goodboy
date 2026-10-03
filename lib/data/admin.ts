@@ -18,7 +18,7 @@ export interface AdminSession {
   email: string;
 }
 
-/** Null when there's a Supabase session but no admin_profiles row (see proxy.ts's comment on layered auth). */
+/** Null when there's a Supabase session but no admin_profiles row (see middleware.ts's comment on layered auth). */
 export async function getAdminSession(): Promise<AdminSession | null> {
   const supabase = await getServerSupabaseClient();
   const {

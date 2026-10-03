@@ -27,7 +27,7 @@ export async function getServerSupabaseClient() {
               cookieStore.set(name, value, options);
             }
           } catch {
-            // Called from a Server Component render — proxy.ts refreshes the
+            // Called from a Server Component render — middleware.ts refreshes the
             // session cookie on the next request instead. Safe to ignore.
           }
         },

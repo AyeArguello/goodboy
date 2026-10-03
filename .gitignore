@@ -52,3 +52,6 @@ next-env.d.ts
 
 # CI test result files
 /*-results.json
+
+# netlify
+.netlify

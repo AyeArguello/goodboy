@@ -143,7 +143,8 @@ function isPending(value: string): boolean {
 /**
  * Throws with an aggregated, human-readable list of every unconfirmed
  * business-critical field. Call only when NODE_ENV === 'production' (see
- * next.config.ts) — dev and preview builds are allowed to ship placeholders.
+ * next.config.ts) — dev may ship placeholders, but every `next build` is a production build
+ * (including Netlify Deploy Previews), so those need the variables too.
  */
 export function assertProductionBusinessConfig(): void {
   const problems: string[] = [];

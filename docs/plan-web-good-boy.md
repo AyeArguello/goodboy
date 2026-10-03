@@ -239,7 +239,7 @@ Si se automatiza posteriormente, usar Mercado Pago Checkout Pro con webhook firm
 - CSS Modules o Tailwind CSS con tokens CSS. Evitar una librería pesada de componentes para esta escala.
 - Supabase: PostgreSQL, autenticación del admin y Row Level Security.
 - Zod para validación compartida.
-- Vercel para despliegue y previews.
+- Netlify (plan Free) para despliegue y Deploy Previews, con el adaptador automático de Next.js.
 - Resend para alertas por correo a la dueña, opcional en desarrollo.
 - Playwright para el flujo crítico y Vitest para reglas de dominio.
 - Sentry opcional después del MVP.

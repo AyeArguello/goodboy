@@ -5,16 +5,21 @@ import { getPublicEnv } from "@/lib/env/public";
 const PUBLIC_ADMIN_PATHS = ["/admin/login", "/admin/auth/callback"];
 
 /**
- * Next.js 16 renamed `middleware.ts`/`middleware()` to `proxy.ts`/`proxy()`
- * (nodejs runtime only, no edge) — see
- * node_modules/next/dist/docs/.../version-16.md. This is the route-level
- * gate for /admin/*: it only checks "is there a session", never business
- * authorization. The actual authorization boundary is the database —
- * is_admin() inside every RPC, and RLS on every table — so a session
- * without an admin_profiles row (never created for a non-allowlisted email;
- * see app/admin/auth/callback) can load the shell but every data call fails.
+ * Route-level gate for /admin/*. It only checks "is there a session", never
+ * business authorization. The actual authorization boundary is the database —
+ * is_admin() inside every RPC, and RLS on every table — so a session without
+ * an admin_profiles row (never created for a non-allowlisted email; see
+ * app/admin/auth/callback) can load the shell but every data call fails.
+ *
+ * Kept as `middleware.ts` (edge runtime), NOT as Next 16's `proxy.ts`
+ * (Node.js runtime): the Netlify Next.js adapter currently cannot package the
+ * Node.js proxy — the deploy fails while bundling it ("Cannot find module
+ * './chunks/[turbopack]_runtime.js'", opennextjs/opennextjs-netlify#3575).
+ * `next build` prints a deprecation warning for this file name; it is
+ * expected. Switch back to `proxy.ts` / `export async function proxy` once
+ * Netlify fixes that (see docs/deploy-payment-receipts-production.md).
  */
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   if (!pathname.startsWith("/admin")) return NextResponse.next();
   if (PUBLIC_ADMIN_PATHS.some((p) => pathname.startsWith(p)))

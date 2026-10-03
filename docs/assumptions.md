@@ -110,7 +110,7 @@ técnica (qué bloquea el build); esa es la vista legal/operativa completa.
     timestamp.
 - **Stack:** Next.js 16.3.6 (App Router, Turbopack), React 19.2.8, TypeScript 5.9.3 estricto, Tailwind CSS
   4.3.3, Supabase, pnpm 10.15.1. Ver README para detalle de versiones y las particularidades de Next 16
-  (`proxy.ts` en vez de `middleware.ts`, `params`/`searchParams` async, `fetch` sin cache por defecto).
+  (`proxy.ts` en vez de `middleware.ts` — salvo en este repo, ver §3 —, `params`/`searchParams` async, `fetch` sin cache por defecto).
 - **Zona horaria:** `America/Argentina/Cordoba` (IANA válida; reemplaza `Buenos_Aires` de v1 ahora que la
   ciudad está confirmada — mismo offset UTC-03:00 sin DST actualmente, pero es la zona semánticamente
   correcta).
@@ -128,7 +128,7 @@ técnica (qué bloquea el build); esa es la vista legal/operativa completa.
 | Logo en SVG/PNG transparente + favicon recortado                                     | Header, favicon, OG                                        | Alta                                                             |
 | Permiso de publicación de las 16 fotos + validación de captions                      | Galería, Hero                                              | Alta — ver auditoría "Aviso de fotos"                            |
 | Registrar `goodboy.com.ar` de verdad (dominio ya confirmado como disponible)         | `NEXT_PUBLIC_SITE_URL`, canonical, OG                      | Bloquea producción real (build ya no se bloquea por esto en dev) |
-| Cargar en el hosting la URL, anon key y service role del proyecto Supabase remoto    | Todo el backend                                            | Bloquea ir a producción (el build falla si faltan — ver §8)      |
+| Cargar en Netlify la URL, anon key y service role del proyecto Supabase remoto       | Todo el backend                                            | Bloquea ir a producción (el build falla si faltan — ver §8)      |
 | Credenciales Resend (opcional)                                                       | Alertas por correo                                         | No bloquea (adaptador noop en dev)                               |
 | Revisión final de abogado/a y contador/a + checklist completo                        | Ver `docs/auditoria-seguridad-y-cumplimiento-good-boy.md`  | Bloquea publicar ("No publicar todavía")                         |
 
@@ -138,13 +138,20 @@ Ya no están pendientes (confirmados en v3, ver §7): dominio (`goodboy.com.ar`)
 Ya no está pendiente (v4, ver §8): **el proyecto Supabase remoto existe** y tiene aplicadas las 8
 migraciones de `supabase/migrations/`. Lo que sigue abierto es operativo: decidir si ese proyecto es el de
 producción o el de preview (el README pide dos proyectos separados, nunca compartir base) y cargar sus
-claves como variables de entorno del hosting.
+claves como variables de entorno de Netlify.
 
 ## 3. Decisiones tomadas (dentro del margen que no compromete dinero/agenda/privacidad)
 
 - **Backend:** Supabase (Postgres + Auth), RLS deny-by-default, escrituras públicas solo vía RPC
   `SECURITY DEFINER`.
-- **Middleware de admin:** `proxy.ts` (convención Next 16), no `middleware.ts`.
+- **Hosting:** Netlify Free (reemplaza a Vercel). permite proyectos comerciales; 300 créditos mensuales, sin cargos
+  automáticos; al agotarlos el sitio se pausa hasta el siguiente ciclo. Ver `docs/deploy-payment-receipts-production.md` §9.
+- **Middleware de admin:** `middleware.ts` (runtime edge), no `proxy.ts` (convención Next 16). El adaptador de
+  Netlify falla al empaquetar el proxy de Node.js (opennextjs/opennextjs-netlify#3575; verificado con un
+  build local). Volver a `proxy.ts` cuando ese issue se cierre. `next build` avisa la deprecación: esperado.
+- **IP para el rate limit:** con `NETLIFY=true` se usa solo `x-nf-client-connection-ip` (lo fija Netlify); si falta,
+  no se confía en `x-forwarded-for` (todos comparten la clave "unknown"). `x-forwarded-for` queda solo para
+  desarrollo, CI y ejecución fuera de Netlify.
 - **Design system:** tokens como variables CSS + Tailwind v4 `@theme`, sin reescribir Tailwind desde cero.
 - **Galería:** estática (manifiesto tipado en `lib/content/landing.ts`), sin CMS. Usa fotos reales tomadas
   en el local (`public/images/perros/`) para el Hero y las 15 fichas paginadas de la galería (4 por
