@@ -77,13 +77,13 @@ const STATUS_COPY: Record<
   },
   cancelled_by_business: {
     text: () =>
-      "Tuvimos que cancelar este turno; te avisamos por email. Escribinos por WhatsApp para coordinar uno nuevo.",
+      "Tuvimos que cancelar este turno. Podés elegir entre reprogramar sin costo o recibir la devolución total de la seña dentro de las 24 h por transferencia.",
     ctaLabel: "Escribir por WhatsApp",
     ctaHref: () => businessWhatsAppLink(),
   },
   deposit_forfeited: {
     text: () =>
-      "Este turno se canceló con menos de 48 h de anticipación, así que la seña no se reintegra. Podés pedir un turno nuevo cuando quieras.",
+      "Este turno se canceló sin una reprogramación válida dentro del mismo mes, por lo que la seña no se reintegra. Podés pedir un turno nuevo cuando quieras.",
     ctaLabel: "Pedir un turno nuevo",
     ctaHref: () => "/turnos",
   },
@@ -94,7 +94,7 @@ const STATUS_COPY: Record<
   },
   no_show: {
     text: () =>
-      "Registramos que no se pudo concretar este turno. Escribinos si querés reprogramar.",
+      "El servicio no pudo concretarse. No se cobra el saldo del servicio y la seña no se reintegra.",
     ctaLabel: "Escribir por WhatsApp",
     ctaHref: () => businessWhatsAppLink(),
   },

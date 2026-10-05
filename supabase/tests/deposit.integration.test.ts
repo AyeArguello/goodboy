@@ -131,7 +131,7 @@ describe("deposit lifecycle", () => {
     expect(payment!.status).toBe("reversed");
   });
 
-  it("cancelling a confirmed appointment with plenty of notice does not forfeit the deposit", async () => {
+  it("client cancellation without rebooking forfeits a confirmed deposit even with 48h or more notice", async () => {
     const svc = serviceClient();
     // 96h out — comfortably past the 48h cutoff.
     const { appointmentId } = await createPendingRequest(96);
@@ -155,7 +155,7 @@ describe("deposit lifecycle", () => {
       .select("status")
       .eq("id", appointmentId)
       .single();
-    expect(data!.status).toBe("cancelled_by_client");
+    expect(data!.status).toBe("deposit_forfeited");
   });
 
   it("client cancelling a confirmed appointment inside the 48h cutoff forfeits the deposit", async () => {

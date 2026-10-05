@@ -82,5 +82,5 @@ export const adminWhatsAppTemplates = {
   confirmTransportCost: (input: { neighborhood: string }) =>
     `El traslado desde ${input.neighborhood || "tu barrio"} es de ARS [monto], ida y vuelta.`,
   depositForfeited: (input: { ownerName: string; dogName: string }) =>
-    `Hola ${input.ownerName}, como la cancelación del turno de ${input.dogName} fue con menos de 48 h de anticipación, la seña no se reintegra. Cualquier duda, escribinos.`,
+    `Hola ${input.ownerName}, como el turno de ${input.dogName} se canceló sin una reprogramación válida dentro del mismo mes, la seña no se reintegra. Cualquier duda, escribinos.`,
 };

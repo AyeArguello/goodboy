@@ -435,16 +435,16 @@ alguna, el build falla nombrándola, sin mostrar valores.
 | ----------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------- | --------------------------- | -------------------------------------------- |
 | `NEXT_PUBLIC_SITE_URL`                          | pública     | Pendiente: `https://goodboy.com.ar` mientras no esté registrado, usar la URL `*.netlify.app` (https obligatorio) | Production y Deploy Preview | build (se incrusta) y runtime                |
 | `NEXT_PUBLIC_SUPABASE_URL`                      | pública     | Confirmado: `https://rmfnrvidepyirtvjumgy.supabase.co`                                                           | ambos                       | build (CSP, bundle) y runtime                |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`                 | pública     | Confirmado (clave anon del proyecto; se obtiene del Dashboard)                                                   | ambos                       | build y runtime                              |
-| `SUPABASE_SERVICE_ROLE_KEY`                     | **secreta** | Confirmada (existe; copiar del Dashboard sin imprimir)                                                           | ambos                       | solo runtime (servidor) y la puerta de build |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`                 | pública     | Configurada con la clave nueva `sb_publishable_...` (el nombre de la variable se conserva por compatibilidad)    | ambos                       | build y runtime                              |
+| `SUPABASE_SERVICE_ROLE_KEY`                     | **secreta** | Configurada con la clave nueva `sb_secret_...`; nunca imprimir ni enviar al navegador                            | ambos                       | solo runtime (servidor) y la puerta de build |
 | `ADMIN_EMAIL_ALLOWLIST`                         | privada     | Confirmado: `ayelearguello.aa@gmail.com` (agregar el correo de quien administre)                                 | ambos                       | runtime y la puerta de build                 |
-| `RATE_LIMIT_HMAC_SECRET`                        | **secreta** | Pendiente: generar ≥ 32 caracteres aleatorios                                                                    | ambos                       | runtime y la puerta de build                 |
-| `RESEND_API_KEY`                                | **secreta** | Pendiente: crear en Resend                                                                                       | ambos                       | runtime y la puerta de build                 |
-| `RESEND_FROM_EMAIL`                             | privada     | Pendiente: remitente de un dominio verificado en Resend                                                          | ambos                       | runtime y la puerta de build                 |
-| `OWNER_NOTIFICATION_EMAIL`                      | privada     | Pendiente: correo que recibe el aviso de cada comprobante                                                        | ambos                       | runtime y la puerta de build                 |
-| `DEPOSIT_TRANSFER_ALIAS`                        | privada     | Pendiente: alias real; dato de negocio, no inventar                                                              | ambos                       | runtime y la puerta de build                 |
-| `NEXT_PUBLIC_LEGAL_ENTITY_NAME`                 | pública     | Pendiente: razón social o responsable                                                                            | ambos                       | build (se incrusta) y la puerta              |
-| `NEXT_PUBLIC_BUSINESS_CANCELLATION_POLICY_TEXT` | pública     | Pendiente: política si Good Boy cancela / fuerza mayor                                                           | ambos                       | build (se incrusta) y la puerta              |
+| `RATE_LIMIT_HMAC_SECRET`                        | **secreta** | Configurada en Netlify con 48 bytes aleatorios criptográficos                                                    | ambos                       | runtime y la puerta de build                 |
+| `RESEND_API_KEY`                                | **secreta** | Configurada en Netlify como secreto en los cuatro contextos remotos, con permiso de solo envío                   | ambos                       | runtime y la puerta de build                 |
+| `RESEND_FROM_EMAIL`                             | privada     | Temporal: `onboarding@resend.dev`; cambiar a `turnos@goodboy.com.ar` después de comprar y verificar el dominio   | ambos                       | runtime y la puerta de build                 |
+| `OWNER_NOTIFICATION_EMAIL`                      | privada     | Configurado: `ayelearguello.aa@gmail.com`                                                                        | ambos                       | runtime y la puerta de build                 |
+| `DEPOSIT_TRANSFER_ALIAS`                        | privada     | Configurado: `ayearguello.mp`                                                                                    | ambos                       | runtime y la puerta de build                 |
+| `NEXT_PUBLIC_LEGAL_ENTITY_NAME`                 | pública     | Configurado: `Ayelén Argüello` (Good Boy es el nombre comercial)                                                 | ambos                       | build (se incrusta) y la puerta              |
+| `NEXT_PUBLIC_BUSINESS_CANCELLATION_POLICY_TEXT` | pública     | Configurada: reprogramación sin costo o devolución total en 24 h por transferencia                               | ambos                       | build (se incrusta) y la puerta              |
 
 Reglas:
 
@@ -459,7 +459,7 @@ Reglas:
   build. Si el escaneo marcara la clave anon de Supabase, agregar su nombre a
   `SECRETS_SCAN_OMIT_KEYS`.
 - Opcionales (no bloquean el build): `DEPOSIT_TRANSFER_HOLDER`,
-  `DEPOSIT_TRANSFER_CBU`, `NEXT_PUBLIC_DEPOSIT_DUE_HOURS` (24 por defecto),
+  `DEPOSIT_TRANSFER_CBU`,
   referencias de tamaño (`NEXT_PUBLIC_SIZE_REF_*`),
   `NEXT_PUBLIC_RESPONSE_TIME_TEXT`, Turnstile (apagado) y
   `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`.

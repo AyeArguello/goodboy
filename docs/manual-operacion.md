@@ -41,13 +41,12 @@ Este es el flujo más importante — un turno **nunca queda confirmado sin la se
    reasignado (la seña ya pagada sigue valiendo, no se pide de nuevo).
 3. **Cancelar**: tocá "Cancelar solicitud" → elegí quién cancela ("Canceló el cliente" o "Cancela Good
    Boy") → confirmás.
-   - Si **el cliente** cancela un turno ya **confirmado** (con seña pagada) y faltan **menos de 48 horas**,
-     el sistema marca automáticamente la seña como perdida — no hace falta que lo calcules vos.
-   - Si faltan 48 horas o más, se cancela sin perder la seña.
+   - Si el cliente quiere conservar una seña ya pagada, elegí **Reprogramar** y asigná una fecha dentro del
+     mismo mes. Si elegís cancelar el turno confirmado, la seña queda perdida, incluso con 48 h o más.
+   - Con menos de 48 h no corresponde conservar la seña.
    - Si cancela **Good Boy** (por ejemplo, la peluquera se enferma), la seña **nunca** se marca como
-     perdida, sin importar cuánto falte para el turno — el sistema lo distingue solo. Vos decidís
-     manualmente si corresponde devolver la seña o reprogramar sin costo (política pendiente de definir,
-     ver `docs/assumptions.md`).
+     perdida. El cliente elige reprogramar sin costo o recibir la devolución total dentro de 24 h mediante
+     transferencia; registrá la devolución desde el panel.
 4. Avisale al cliente por WhatsApp con el botón correspondiente ("Avisar seña perdida" si aplica).
 5. Si te equivocaste registrando una seña, tocá **"Revertir seña (por error)"** en la ficha de un turno
    confirmado — vuelve a "Esperando seña" con un plazo nuevo, sin perder el registro de lo que pasó.
@@ -79,9 +78,9 @@ borrar nada; podés volver a mostrarlo cuando quieras (siempre que el día no es
 - Si dos personas piden el mismo horario al mismo tiempo, el sistema deja pasar solo a una.
 - Ningún turno se confirma sin que vos registres la seña — el sistema no confía en lo que diga la web del
   cliente.
-- Si **el cliente** cancela un turno confirmado con menos de 48 horas, la seña queda perdida
-  automáticamente. Si cancelás **vos** (Good Boy), la seña nunca se pierde sola — decidís vos qué hacer con
-  ella.
+- Si el cliente quiere conservar la seña de un turno confirmado, usá **Reprogramar** dentro del mismo mes.
+  Cancelar el turno confirmado la marca como perdida. Si cancelás vos (Good Boy), ofrecé reprogramación sin
+  costo o devolución total dentro de 24 h y registrá la decisión.
 - Los precios que se muestran son siempre orientativos — el precio final lo definís vos al recibir al
   perro.
 - Ningún dato de un cliente (nombre, teléfono, dirección) aparece en la pantalla pública de "estado" —

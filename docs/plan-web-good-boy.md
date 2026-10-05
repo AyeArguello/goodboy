@@ -33,7 +33,8 @@ La decisión principal es **no construir una agenda totalmente automática**. La
 - Tiempo de trabajo por perro: aproximadamente 2 h 30 min a 3 h 30 min.
 - La dueña habilita lugares de forma progresiva y conserva margen de decisión. Entre 11:30 y 13:30 hay una separación intencional de 2 horas; el sistema debe admitir esa grilla exacta aunque advierta posibles solapamientos.
 - No se toman turnos para el mismo día. Anticipación mínima: 1 día.
-- El cliente debe cancelar con al menos 48 horas de anticipación; fuera de ese plazo pierde la seña.
+- Con 48 horas o más, el cliente conserva la seña únicamente si reprograma dentro del mismo mes; sin
+  reprogramación, o con menos de 48 horas, la pierde.
 - Agenda abierta para semanas o meses futuros; no se limita a completar una semana antes de abrir la siguiente.
 - Dirección: Manuel Toro 4047, Córdoba Capital, Córdoba, Argentina, CP 5010.
 - WhatsApp: `+54 9 3512 72-2097` (`+5493512722097` para enlaces `wa.me`).
@@ -73,8 +74,10 @@ Texto obligatorio junto a cualquier precio: **“Valores orientativos. El precio
 - Medios de pago: efectivo, transferencia y tarjeta mediante link de Mercado Pago.
 - Recargos informados para tarjeta mediante link de Mercado Pago: 1 cuota, 7%; 3 cuotas, 10,5%. **No publicar todavía el 7% en una cuota:** requiere revisión legal/comercial porque el artículo 37(c) de la Ley 25.065 prohíbe diferencias entre contado y tarjeta. El modelo técnico debe admitir opciones por cantidad de cuotas, no un único porcentaje.
 - Para agendar se requiere una seña de ARS 20.000, que se descuenta del total del servicio.
-- Si el cliente cancela con menos de 48 horas de anticipación, pierde la seña.
-- Falta definir el plazo que tendrá el cliente para pagar la seña después de aprobarse la solicitud y la política ante cancelación de Good Boy o fuerza mayor.
+- La seña debe pagarse dentro de las 24 horas desde la aprobación o antes del vencimiento anterior indicado
+  por el sistema si el turno está próximo.
+- Si Good Boy cancela o existe fuerza mayor, el cliente elige reprogramar sin costo o recibir la devolución
+  total dentro de las 24 horas mediante transferencia.
 
 ## 3. Información pendiente antes de publicar
 
