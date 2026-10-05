@@ -1,10 +1,13 @@
 # Netlify build settings. Contains NO secrets and no environment values: every
 # variable is configured in the Netlify UI/CLI (see
 # docs/deploy-payment-receipts-production.md). Next.js is built and served by
-# Netlify's automatic Next.js adapter, so there is deliberately no `publish`
-# directory, no @netlify/plugin-nextjs entry and no [[redirects]] here.
+# Netlify's automatic Next.js adapter. The explicit `.next` publish directory
+# prevents Netlify from falling back to the repository root before the adapter
+# rewrites the deploy configuration. There is deliberately no pinned
+# @netlify/plugin-nextjs entry and no [[redirects]] here.
 [build]
   command = "pnpm build"
+  publish = ".next"
 
 [build.environment]
   NODE_VERSION = "22"
