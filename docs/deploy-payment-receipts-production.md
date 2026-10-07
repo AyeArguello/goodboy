@@ -1,9 +1,36 @@
 # Despliegue a producción: flujo de comprobantes de seña
 
-Estado de referencia: `main` en el commit `f024904` (CI verde, run 37084904531),
-más los cambios para Netlify de la sección 9 (todavía sin commitear).
+Estado de referencia: rama `codex/netlify-deploy-preview` en el commit
+`8c3b2b0` (CI verde: quality, 68 integración y 26 E2E sin omitidos).
 Hosting de la aplicación: **Netlify Free**.
 Proyecto Supabase de producción: `rmfnrvidepyirtvjumgy` (plan Free).
+
+## Estado operativo actualizado (2026-10-06)
+
+Esta sección reemplaza los estados históricos de preflight que se conservan
+más abajo como trazabilidad:
+
+- Supabase CLI está autenticada y vinculada; 12 migraciones están alineadas.
+  Solo `20261005153527_confirm_cancellation_and_refund_policy.sql` queda local.
+- `payment_receipts_flow` y el hardening de `enforce_rate_limit` ya están
+  aplicados. La base de negocio sigue vacía: 0 turnos, pagos, comprobantes y
+  objetos de Storage.
+- `pg_cron`, `pg_net` y Vault están configurados. El cron diario de purga está
+  activo a las 06:15 UTC.
+- `purge-payment-receipts` está ACTIVE, versión 2. La prueba posterior al
+  despliegue dio 405/401/401 y una ejecución autenticada exitosa vía Vault,
+  sin candidatos ni errores.
+- Netlify tiene las 12 variables obligatorias y Supabase Auth incluye las URLs
+  de callback del sitio. El Deploy Preview del PR 1 compiló correctamente con
+  `publish = ".next"`, pero está protegido por Netlify Team Protection; la
+  sesión de navegador actual no pertenece al equipo y todavía no permite los
+  smoke tests HTTP.
+- El dump previo a la migración pendiente está bloqueado: la CLI confirmó que
+  necesita Docker o Podman y ninguno está instalado. El archivo `schema.sql`
+  creado por el intento mide 0 bytes y **no es un respaldo válido**. No aplicar
+  la migración hasta obtener el dump real.
+- `goodboy.com.ar` sigue sin comprar; Resend usa temporalmente
+  `onboarding@resend.dev`. Las páginas legales siguen como borrador `noindex`.
 
 > **Este documento es un procedimiento, no una autorización.** Nada de lo que
 > sigue se ejecuta hasta que haya una autorización explícita y por escrito para
@@ -383,8 +410,8 @@ La primera falla coincide con el issue abierto
   `x-forwarded-for` y `x-real-ip`. Hay que confirmar en el Deploy Preview que
   `NETLIFY` llega al runtime de las funciones y que el límite de reservas se
   aplica por visitante (sección 10).
-- Se agregó `netlify.toml` (solo `pnpm build` y `NODE_VERSION = "22"`, sin
-  secretos, sin `publish`, sin plugin ni redirecciones) y `.netlify` en
+- Se agregó `netlify.toml` (`pnpm build`, `publish = ".next"` y
+  `NODE_VERSION = "22"`, sin secretos, plugin ni redirecciones) y `.netlify` en
   `.gitignore`. **No** se instaló `@netlify/plugin-nextjs`: el adaptador se
   aplica solo y la prueba local lo demostró.
 
@@ -459,9 +486,7 @@ Reglas:
   build. Si el escaneo marcara la clave anon de Supabase, agregar su nombre a
   `SECRETS_SCAN_OMIT_KEYS`.
 - Opcionales (no bloquean el build): `DEPOSIT_TRANSFER_HOLDER`,
-  `DEPOSIT_TRANSFER_CBU`,
-  referencias de tamaño (`NEXT_PUBLIC_SIZE_REF_*`),
-  `NEXT_PUBLIC_RESPONSE_TIME_TEXT`, Turnstile (apagado) y
+  `DEPOSIT_TRANSFER_CBU`, Turnstile (apagado) y
   `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`.
 - Hoy hay una sola base de datos (la de producción). Un Deploy Preview con las
   claves reales escribe en ella: usar el preview solo con los smoke tests de la
@@ -494,9 +519,10 @@ un valor falso propio, y los tests.)
 
 ### Estado de la configuración en Netlify
 
-No hay `.env.local` ni sitio de Netlify creado todavía, así que el panel de
-Netlify no tiene nada cargado. Hay que cargar las doce variables de la tabla en
-Production y en Deploy Preview.
+El sitio `clinquant-pithivier-afc538` existe y tiene las doce variables de la
+tabla en Production y Deploy Preview. El PR 1 genera correctamente
+`https://deploy-preview-1--clinquant-pithivier-afc538.netlify.app/`; Team
+Protection responde 401 fuera de una sesión autorizada.
 
 ## 10. Orden de despliegue en Netlify y criterios de detención
 
