@@ -93,7 +93,7 @@ export function SuccessScreen({
 
       <ol className="m-0 flex list-none flex-col gap-3.5 p-0">
         {[
-          `Revisamos tu solicitud y te respondemos por email. ${businessConfig.responseTimeText} Mirá también la carpeta de correo no deseado.`,
+          "Revisamos tu solicitud y te respondemos por email. Mirá también la carpeta de correo no deseado.",
           `Si la aprobamos, te mandamos los datos para transferir la seña de ARS ${businessConfig.deposit.amountArs.toLocaleString("es-AR")} y un enlace seguro para subir el comprobante.`,
           "Verificamos el comprobante a mano. El turno queda confirmado recién cuando lo verificamos, y te avisamos por email.",
           "El día del turno evaluamos a tu perro y confirmamos el precio final — la seña se descuenta del total.",

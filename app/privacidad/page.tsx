@@ -21,8 +21,9 @@ export default function PrivacidadPage() {
       <p className="text-ink-soft">
         En resumen (sujeto al texto final): los datos que dejás al pedir un
         turno (nombre, WhatsApp, correo y datos de tu perro) se usan solo para
-        gestionar esa solicitud. No se comparten con terceros ni se usan con
-        fines de marketing.
+        gestionar esa solicitud. No se venden ni se comparten con fines
+        publicitarios; los proveedores técnicos indicados más abajo los procesan
+        únicamente para prestar el servicio.
       </p>
 
       <section aria-labelledby="correo" className="flex flex-col gap-2">
@@ -36,6 +37,19 @@ export default function PrivacidadPage() {
           y cuando el turno se confirma, se cancela o se reprograma, o si
           registramos una devolución. Para enviarlos usamos un proveedor de
           envío de emails.
+        </p>
+      </section>
+
+      <section aria-labelledby="cookies" className="flex flex-col gap-2">
+        <h2 id="cookies" className="font-heading m-0 text-xl font-bold">
+          Cookies y almacenamiento técnico
+        </h2>
+        <p className="text-ink-soft m-0">
+          El sitio no usa cookies publicitarias ni de analítica. El panel de
+          administración utiliza únicamente cookies técnicas de sesión de
+          Supabase, necesarias para autenticar a la persona administradora y
+          proteger el acceso. Mientras esto no cambie, no se requiere un banner
+          de consentimiento para cookies opcionales.
         </p>
       </section>
 

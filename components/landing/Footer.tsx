@@ -48,6 +48,26 @@ export function Footer() {
             © {new Date().getFullYear()} {businessConfig.legalDisclaimerName}
           </span>
         </nav>
+        <div className="border-lavender-100 flex flex-col gap-3 border-t pt-6 sm:col-span-3 sm:flex-row sm:items-center sm:justify-between">
+          <span className="text-ink-soft text-sm">
+            Sitio realizado por GEC Soluciones Digitales
+          </span>
+          <a
+            href="https://gecdigital.dev/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Visitar el sitio de GEC Soluciones Digitales (abre en una pestaña nueva)"
+            className="focus-visible:ring-purple inline-flex w-fit items-center rounded-lg p-1 transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          >
+            <Image
+              src="/logo-gec.png"
+              alt="GEC Soluciones Digitales"
+              width={722}
+              height={608}
+              className="h-auto w-20"
+            />
+          </a>
+        </div>
       </div>
     </footer>
   );

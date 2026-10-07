@@ -2,10 +2,9 @@ import { getPublicEnv } from "../env/public";
 
 /**
  * Single source of truth for business data (NAP, WhatsApp, pricing, rules,
- * pending copy). Confirmed data is a literal constant. Anything not yet
- * confirmed by the owner comes from an env var with a `[PENDIENTE]`-tagged
- * dev fallback — see docs/assumptions.md section 2 for the full list and
- * why each one blocks launch.
+ * pending copy). Confirmed data is a literal constant. Anything that blocks
+ * launch comes from an env var with a `[PENDIENTE]`-tagged dev fallback — see
+ * docs/assumptions.md section 2 for the full list.
  *
  * `assertProductionBusinessConfig` is called from `next.config.ts` during
  * `next build` in production so the build fails loudly instead of shipping
@@ -47,21 +46,6 @@ export const businessConfig = {
   ),
   absencePolicyText:
     "Ante inasistencia, demora que impida prestar el servicio o imposibilidad de atender al perro, no se cobra el saldo del servicio y la seña no se reintegra.",
-  sizeKgReference: {
-    pequeno: envOr(
-      process.env.NEXT_PUBLIC_SIZE_REF_PEQUENO_KG,
-      `${PENDING} kg`,
-    ),
-    mediano: envOr(
-      process.env.NEXT_PUBLIC_SIZE_REF_MEDIANO_KG,
-      `${PENDING} kg`,
-    ),
-    grande: envOr(process.env.NEXT_PUBLIC_SIZE_REF_GRANDE_KG, `${PENDING} kg`),
-  },
-  responseTimeText: envOr(
-    process.env.NEXT_PUBLIC_RESPONSE_TIME_TEXT,
-    `${PENDING} plazo de respuesta`,
-  ),
   prices: {
     pequeno: { label: "Pequeño", range: "30.000–40.000" },
     mediano: { label: "Mediano", range: "40.000–50.000" },
