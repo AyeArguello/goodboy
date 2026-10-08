@@ -1,17 +1,18 @@
 # Despliegue a producción: flujo de comprobantes de seña
 
 Estado de referencia: rama `codex/netlify-deploy-preview` en el commit
-`8c3b2b0` (CI verde: quality, 68 integración y 26 E2E sin omitidos).
+`d3a9e40` (CI verde: quality, 68 integración y 26 E2E sin omitidos).
 Hosting de la aplicación: **Netlify Free**.
 Proyecto Supabase de producción: `rmfnrvidepyirtvjumgy` (plan Free).
 
-## Estado operativo actualizado (2026-10-06)
+## Estado operativo actualizado (2026-10-08)
 
 Esta sección reemplaza los estados históricos de preflight que se conservan
 más abajo como trazabilidad:
 
-- Supabase CLI está autenticada y vinculada; 12 migraciones están alineadas.
-  Solo `20261005153527_confirm_cancellation_and_refund_policy.sql` queda local.
+- Supabase CLI está autenticada y vinculada; las 13 migraciones están alineadas.
+  `20261005153527_confirm_cancellation_and_refund_policy.sql` ya fue aplicada
+  después de un dry-run que confirmó que era la única pendiente.
 - `payment_receipts_flow` y el hardening de `enforce_rate_limit` ya están
   aplicados. La base de negocio sigue vacía: 0 turnos, pagos, comprobantes y
   objetos de Storage.
@@ -20,17 +21,20 @@ más abajo como trazabilidad:
 - `purge-payment-receipts` está ACTIVE, versión 2. La prueba posterior al
   despliegue dio 405/401/401 y una ejecución autenticada exitosa vía Vault,
   sin candidatos ni errores.
-- Netlify tiene las 12 variables obligatorias y Supabase Auth incluye las URLs
-  de callback del sitio. El Deploy Preview del PR 1 compiló correctamente con
-  `publish = ".next"`, pero está protegido por Netlify Team Protection; la
-  sesión de navegador actual no pertenece al equipo y todavía no permite los
-  smoke tests HTTP.
-- El dump previo a la migración pendiente está bloqueado: la CLI confirmó que
-  necesita Docker o Podman y ninguno está instalado. El archivo `schema.sql`
-  creado por el intento mide 0 bytes y **no es un respaldo válido**. No aplicar
-  la migración hasta obtener el dump real.
-- `goodboy.com.ar` sigue sin comprar; Resend usa temporalmente
-  `onboarding@resend.dev`. Las páginas legales siguen como borrador `noindex`.
+- Netlify tiene las 12 variables obligatorias y Supabase Auth incluye el sitio,
+  el callback de administración, el wildcard de Deploy Previews y localhost.
+  El Deploy Preview del PR 1 compiló correctamente con `publish = ".next"` y
+  fue verificado en una sesión autorizada: landing, `/turnos`, redirección de
+  `/admin`, footer de GEC y copy de confirmación por email funcionan.
+- El backup lógico previo se guardó fuera del repo en
+  `E:\Trabajo\Freelance\Good Boy\Backups\2026-10-08-pre-cancellation-policy`:
+  `schema.sql` (103508 bytes) y `data.sql` (15478 bytes), ambos con SHA-256.
+- Docker Desktop ya está disponible. La suite local aprobó 68/68 integraciones
+  con Supabase/Storage/Edge Function reales y 26/26 E2E sin omitidos.
+- `goodboy.com.ar` está agregado en Netlify, pero DNS y el certificado TLS aún
+  figuran en propagación. Resend usa temporalmente `onboarding@resend.dev`; hay
+  que verificar el dominio antes de usar `turnos@goodboy.com.ar`. Las páginas
+  legales siguen como borrador `noindex`.
 
 > **Este documento es un procedimiento, no una autorización.** Nada de lo que
 > sigue se ejecuta hasta que haya una autorización explícita y por escrito para
@@ -628,17 +632,21 @@ los datos de prueba al terminar.
 
 Cada ítem requiere un "sí" explícito antes de ejecutarse:
 
-- [ ] Iniciar sesión en la CLI y vincular el proyecto (`login`, `link`).
-- [ ] Tomar el backup y guardarlo en la carpeta indicada fuera del repo.
-- [ ] Reparar el historial de migraciones (`migration repair`, paso 3).
-- [ ] Aplicar `20261002123846_payment_receipts_flow.sql` (`db push`).
-- [ ] Habilitar `pg_cron` y `pg_net`.
-- [ ] Generar `PURGE_CRON_SECRET` y cargarlo como secreto de la función.
-- [ ] Desplegar la Edge Function `purge-payment-receipts`.
-- [ ] Ejecutar las pruebas del endpoint (405, 401, 401, 200).
-- [ ] Cargar `purge_project_url` y `purge_cron_secret` en Vault.
-- [ ] Programar el cron diario.
-- [ ] Crear el sitio de Netlify, cargar sus variables, desplegar primero un Deploy Preview y, tras los smoke tests, producción.
-- [ ] Confirmar con el dueño los datos de negocio pendientes
-      (`DEPOSIT_TRANSFER_ALIAS`, razón social, política de cancelación,
-      remitente y dominio de Resend verificados).
+- [x] Iniciar sesión en la CLI y vincular el proyecto (`login`, `link`).
+- [x] Tomar el backup y guardarlo en la carpeta indicada fuera del repo.
+- [x] Reparar el historial de migraciones (`migration repair`, paso 3).
+- [x] Aplicar `20261002123846_payment_receipts_flow.sql` (`db push`).
+- [x] Aplicar `20261005153527_confirm_cancellation_and_refund_policy.sql`.
+- [x] Habilitar `pg_cron` y `pg_net`.
+- [x] Generar `PURGE_CRON_SECRET` y cargarlo como secreto de la función.
+- [x] Desplegar la Edge Function `purge-payment-receipts`.
+- [x] Ejecutar las pruebas del endpoint (405, 401, 401, 200).
+- [x] Cargar `purge_project_url` y `purge_cron_secret` en Vault.
+- [x] Programar el cron diario.
+- [x] Crear el sitio de Netlify, cargar sus variables y verificar un Deploy Preview.
+- [x] Confirmar alias, responsable, política de cancelación, reembolso y correo.
+- [ ] Verificar `goodboy.com.ar` en Resend y cambiar el remitente a
+      `turnos@goodboy.com.ar`.
+- [ ] Esperar la propagación DNS/TLS, actualizar Site URL/callback de Supabase
+      Auth y publicar el deploy de producción.
+- [ ] Obtener revisión profesional de los textos legales y retirar `noindex`.
