@@ -15,7 +15,7 @@ export function TurnosPreview({ days }: { days: DayAvailabilityPreview[] }) {
           <p className="text-lavender-100 m-0 max-w-[30em]">
             Publicamos los horarios de a poco para que nadie espere. Se pide con
             al menos 24 horas de anticipación y cada solicitud queda pendiente
-            hasta que te confirmemos por WhatsApp.
+            hasta que verifiquemos la seña y te confirmemos por email.
           </p>
           <div className="pt-2">
             <CtaLink href="/turnos" onDark>
