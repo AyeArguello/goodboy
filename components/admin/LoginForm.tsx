@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { TextField } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
@@ -11,9 +11,19 @@ export function LoginForm({ notAllowed }: { notAllowed: boolean }) {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
+  const [resendIn, setResendIn] = useState(0);
   const [error, setError] = useState<string | null>(
     notAllowed ? "Ese correo no tiene acceso al panel." : null,
   );
+
+  useEffect(() => {
+    if (!sent || resendIn <= 0) return;
+    const timer = window.setTimeout(
+      () => setResendIn((value) => value - 1),
+      1000,
+    );
+    return () => window.clearTimeout(timer);
+  }, [resendIn, sent]);
 
   async function sendLink() {
     setSending(true);
@@ -25,6 +35,7 @@ export function LoginForm({ notAllowed }: { notAllowed: boolean }) {
       return;
     }
     setSent(true);
+    setResendIn(60);
   }
 
   return (
@@ -76,12 +87,22 @@ export function LoginForm({ notAllowed }: { notAllowed: boolean }) {
               <strong className="text-charcoal">{email}</strong>. Abrilo desde
               este teléfono. Vence en 15 minutos.
             </p>
+            {error ? (
+              <p role="alert" className="text-error m-0 text-sm">
+                {error}
+              </p>
+            ) : null}
             <Button
               variant="secondary"
-              onClick={() => setSent(false)}
+              onClick={sendLink}
+              loading={sending}
+              loadingText="Reenviando…"
+              disabled={sending || resendIn > 0}
               className="mt-1.5"
             >
-              No me llegó, reenviar
+              {resendIn > 0
+                ? `Podés reenviar en ${resendIn} s`
+                : "Reenviar enlace"}
             </Button>
           </div>
         )}
