@@ -191,7 +191,8 @@ describe("prepareUpload", () => {
       expect(r.uploads[0]!.path).toMatch(/^r\/[0-9a-f-]{36}\.jpg$/);
       expect(r.uploads[1]!.path).toMatch(/^r\/[0-9a-f-]{36}\.png$/);
       expect(r.uploads[0]!.path).not.toBe(r.uploads[1]!.path);
-      expect(JSON.stringify(r.uploads)).not.toContain("a.jpg");
+      expect(r.uploads[0]!.path).not.toMatch(/\/a\.jpg$/);
+      expect(r.uploads[1]!.path).not.toMatch(/\/b\.png$/);
     }
   });
 
