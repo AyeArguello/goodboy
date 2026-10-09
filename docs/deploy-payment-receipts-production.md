@@ -1,9 +1,40 @@
 # Despliegue a producción: flujo de comprobantes de seña
 
-Estado de referencia: `main` en el commit `f024904` (CI verde, run 37084904531),
-más los cambios para Netlify de la sección 9 (todavía sin commitear).
+Estado de referencia: rama `codex/netlify-deploy-preview` en el commit
+`d3a9e40` (CI verde: quality, 68 integración y 26 E2E sin omitidos).
 Hosting de la aplicación: **Netlify Free**.
 Proyecto Supabase de producción: `rmfnrvidepyirtvjumgy` (plan Free).
+
+## Estado operativo actualizado (2026-10-08)
+
+Esta sección reemplaza los estados históricos de preflight que se conservan
+más abajo como trazabilidad:
+
+- Supabase CLI está autenticada y vinculada; las 13 migraciones están alineadas.
+  `20261005153527_confirm_cancellation_and_refund_policy.sql` ya fue aplicada
+  después de un dry-run que confirmó que era la única pendiente.
+- `payment_receipts_flow` y el hardening de `enforce_rate_limit` ya están
+  aplicados. La base de negocio sigue vacía: 0 turnos, pagos, comprobantes y
+  objetos de Storage.
+- `pg_cron`, `pg_net` y Vault están configurados. El cron diario de purga está
+  activo a las 06:15 UTC.
+- `purge-payment-receipts` está ACTIVE, versión 2. La prueba posterior al
+  despliegue dio 405/401/401 y una ejecución autenticada exitosa vía Vault,
+  sin candidatos ni errores.
+- Netlify tiene las 12 variables obligatorias y Supabase Auth incluye el sitio,
+  el callback de administración, el wildcard de Deploy Previews y localhost.
+  El Deploy Preview del PR 1 compiló correctamente con `publish = ".next"` y
+  fue verificado en una sesión autorizada: landing, `/turnos`, redirección de
+  `/admin`, footer de GEC y copy de confirmación por email funcionan.
+- El backup lógico previo se guardó fuera del repo en
+  `E:\Trabajo\Freelance\Good Boy\Backups\2026-10-08-pre-cancellation-policy`:
+  `schema.sql` (103508 bytes) y `data.sql` (15478 bytes), ambos con SHA-256.
+- Docker Desktop ya está disponible. La suite local aprobó 68/68 integraciones
+  con Supabase/Storage/Edge Function reales y 26/26 E2E sin omitidos.
+- `goodboy.com.ar` está agregado en Netlify, pero DNS y el certificado TLS aún
+  figuran en propagación. Resend usa temporalmente `onboarding@resend.dev`; hay
+  que verificar el dominio antes de usar `turnos@goodboy.com.ar`. Las páginas
+  legales siguen como borrador `noindex`.
 
 > **Este documento es un procedimiento, no una autorización.** Nada de lo que
 > sigue se ejecuta hasta que haya una autorización explícita y por escrito para
@@ -383,8 +414,8 @@ La primera falla coincide con el issue abierto
   `x-forwarded-for` y `x-real-ip`. Hay que confirmar en el Deploy Preview que
   `NETLIFY` llega al runtime de las funciones y que el límite de reservas se
   aplica por visitante (sección 10).
-- Se agregó `netlify.toml` (solo `pnpm build` y `NODE_VERSION = "22"`, sin
-  secretos, sin `publish`, sin plugin ni redirecciones) y `.netlify` en
+- Se agregó `netlify.toml` (`pnpm build`, `publish = ".next"` y
+  `NODE_VERSION = "22"`, sin secretos, plugin ni redirecciones) y `.netlify` en
   `.gitignore`. **No** se instaló `@netlify/plugin-nextjs`: el adaptador se
   aplica solo y la prueba local lo demostró.
 
@@ -435,16 +466,16 @@ alguna, el build falla nombrándola, sin mostrar valores.
 | ----------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------- | --------------------------- | -------------------------------------------- |
 | `NEXT_PUBLIC_SITE_URL`                          | pública     | Pendiente: `https://goodboy.com.ar` mientras no esté registrado, usar la URL `*.netlify.app` (https obligatorio) | Production y Deploy Preview | build (se incrusta) y runtime                |
 | `NEXT_PUBLIC_SUPABASE_URL`                      | pública     | Confirmado: `https://rmfnrvidepyirtvjumgy.supabase.co`                                                           | ambos                       | build (CSP, bundle) y runtime                |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`                 | pública     | Confirmado (clave anon del proyecto; se obtiene del Dashboard)                                                   | ambos                       | build y runtime                              |
-| `SUPABASE_SERVICE_ROLE_KEY`                     | **secreta** | Confirmada (existe; copiar del Dashboard sin imprimir)                                                           | ambos                       | solo runtime (servidor) y la puerta de build |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`                 | pública     | Configurada con la clave nueva `sb_publishable_...` (el nombre de la variable se conserva por compatibilidad)    | ambos                       | build y runtime                              |
+| `SUPABASE_SERVICE_ROLE_KEY`                     | **secreta** | Configurada con la clave nueva `sb_secret_...`; nunca imprimir ni enviar al navegador                            | ambos                       | solo runtime (servidor) y la puerta de build |
 | `ADMIN_EMAIL_ALLOWLIST`                         | privada     | Confirmado: `ayelearguello.aa@gmail.com` (agregar el correo de quien administre)                                 | ambos                       | runtime y la puerta de build                 |
-| `RATE_LIMIT_HMAC_SECRET`                        | **secreta** | Pendiente: generar ≥ 32 caracteres aleatorios                                                                    | ambos                       | runtime y la puerta de build                 |
-| `RESEND_API_KEY`                                | **secreta** | Pendiente: crear en Resend                                                                                       | ambos                       | runtime y la puerta de build                 |
-| `RESEND_FROM_EMAIL`                             | privada     | Pendiente: remitente de un dominio verificado en Resend                                                          | ambos                       | runtime y la puerta de build                 |
-| `OWNER_NOTIFICATION_EMAIL`                      | privada     | Pendiente: correo que recibe el aviso de cada comprobante                                                        | ambos                       | runtime y la puerta de build                 |
-| `DEPOSIT_TRANSFER_ALIAS`                        | privada     | Pendiente: alias real; dato de negocio, no inventar                                                              | ambos                       | runtime y la puerta de build                 |
-| `NEXT_PUBLIC_LEGAL_ENTITY_NAME`                 | pública     | Pendiente: razón social o responsable                                                                            | ambos                       | build (se incrusta) y la puerta              |
-| `NEXT_PUBLIC_BUSINESS_CANCELLATION_POLICY_TEXT` | pública     | Pendiente: política si Good Boy cancela / fuerza mayor                                                           | ambos                       | build (se incrusta) y la puerta              |
+| `RATE_LIMIT_HMAC_SECRET`                        | **secreta** | Configurada en Netlify con 48 bytes aleatorios criptográficos                                                    | ambos                       | runtime y la puerta de build                 |
+| `RESEND_API_KEY`                                | **secreta** | Configurada en Netlify como secreto en los cuatro contextos remotos, con permiso de solo envío                   | ambos                       | runtime y la puerta de build                 |
+| `RESEND_FROM_EMAIL`                             | privada     | Temporal: `onboarding@resend.dev`; cambiar a `turnos@goodboy.com.ar` después de comprar y verificar el dominio   | ambos                       | runtime y la puerta de build                 |
+| `OWNER_NOTIFICATION_EMAIL`                      | privada     | Configurado: `ayelearguello.aa@gmail.com`                                                                        | ambos                       | runtime y la puerta de build                 |
+| `DEPOSIT_TRANSFER_ALIAS`                        | privada     | Configurado: `ayearguello.mp`                                                                                    | ambos                       | runtime y la puerta de build                 |
+| `NEXT_PUBLIC_LEGAL_ENTITY_NAME`                 | pública     | Configurado: `Ayelén Argüello` (Good Boy es el nombre comercial)                                                 | ambos                       | build (se incrusta) y la puerta              |
+| `NEXT_PUBLIC_BUSINESS_CANCELLATION_POLICY_TEXT` | pública     | Configurada: reprogramación sin costo o devolución total en 24 h por transferencia                               | ambos                       | build (se incrusta) y la puerta              |
 
 Reglas:
 
@@ -459,9 +490,7 @@ Reglas:
   build. Si el escaneo marcara la clave anon de Supabase, agregar su nombre a
   `SECRETS_SCAN_OMIT_KEYS`.
 - Opcionales (no bloquean el build): `DEPOSIT_TRANSFER_HOLDER`,
-  `DEPOSIT_TRANSFER_CBU`, `NEXT_PUBLIC_DEPOSIT_DUE_HOURS` (24 por defecto),
-  referencias de tamaño (`NEXT_PUBLIC_SIZE_REF_*`),
-  `NEXT_PUBLIC_RESPONSE_TIME_TEXT`, Turnstile (apagado) y
+  `DEPOSIT_TRANSFER_CBU`, Turnstile (apagado) y
   `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`.
 - Hoy hay una sola base de datos (la de producción). Un Deploy Preview con las
   claves reales escribe en ella: usar el preview solo con los smoke tests de la
@@ -494,9 +523,10 @@ un valor falso propio, y los tests.)
 
 ### Estado de la configuración en Netlify
 
-No hay `.env.local` ni sitio de Netlify creado todavía, así que el panel de
-Netlify no tiene nada cargado. Hay que cargar las doce variables de la tabla en
-Production y en Deploy Preview.
+El sitio `clinquant-pithivier-afc538` existe y tiene las doce variables de la
+tabla en Production y Deploy Preview. El PR 1 genera correctamente
+`https://deploy-preview-1--clinquant-pithivier-afc538.netlify.app/`; Team
+Protection responde 401 fuera de una sesión autorizada.
 
 ## 10. Orden de despliegue en Netlify y criterios de detención
 
@@ -602,17 +632,21 @@ los datos de prueba al terminar.
 
 Cada ítem requiere un "sí" explícito antes de ejecutarse:
 
-- [ ] Iniciar sesión en la CLI y vincular el proyecto (`login`, `link`).
-- [ ] Tomar el backup y guardarlo en la carpeta indicada fuera del repo.
-- [ ] Reparar el historial de migraciones (`migration repair`, paso 3).
-- [ ] Aplicar `20261002123846_payment_receipts_flow.sql` (`db push`).
-- [ ] Habilitar `pg_cron` y `pg_net`.
-- [ ] Generar `PURGE_CRON_SECRET` y cargarlo como secreto de la función.
-- [ ] Desplegar la Edge Function `purge-payment-receipts`.
-- [ ] Ejecutar las pruebas del endpoint (405, 401, 401, 200).
-- [ ] Cargar `purge_project_url` y `purge_cron_secret` en Vault.
-- [ ] Programar el cron diario.
-- [ ] Crear el sitio de Netlify, cargar sus variables, desplegar primero un Deploy Preview y, tras los smoke tests, producción.
-- [ ] Confirmar con el dueño los datos de negocio pendientes
-      (`DEPOSIT_TRANSFER_ALIAS`, razón social, política de cancelación,
-      remitente y dominio de Resend verificados).
+- [x] Iniciar sesión en la CLI y vincular el proyecto (`login`, `link`).
+- [x] Tomar el backup y guardarlo en la carpeta indicada fuera del repo.
+- [x] Reparar el historial de migraciones (`migration repair`, paso 3).
+- [x] Aplicar `20261002123846_payment_receipts_flow.sql` (`db push`).
+- [x] Aplicar `20261005153527_confirm_cancellation_and_refund_policy.sql`.
+- [x] Habilitar `pg_cron` y `pg_net`.
+- [x] Generar `PURGE_CRON_SECRET` y cargarlo como secreto de la función.
+- [x] Desplegar la Edge Function `purge-payment-receipts`.
+- [x] Ejecutar las pruebas del endpoint (405, 401, 401, 200).
+- [x] Cargar `purge_project_url` y `purge_cron_secret` en Vault.
+- [x] Programar el cron diario.
+- [x] Crear el sitio de Netlify, cargar sus variables y verificar un Deploy Preview.
+- [x] Confirmar alias, responsable, política de cancelación, reembolso y correo.
+- [ ] Verificar `goodboy.com.ar` en Resend y cambiar el remitente a
+      `turnos@goodboy.com.ar`.
+- [ ] Esperar la propagación DNS/TLS, actualizar Site URL/callback de Supabase
+      Auth y publicar el deploy de producción.
+- [ ] Obtener revisión profesional de los textos legales y retirar `noindex`.

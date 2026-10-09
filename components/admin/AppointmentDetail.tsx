@@ -77,13 +77,10 @@ export function AppointmentDetail({
     ? new Date(appointment.depositDueAt)
     : null;
   const depositOverdue = depositDueAt ? depositDueAt < now : false;
-  const hoursUntilSlot = (startsAt.getTime() - now.getTime()) / 3_600_000;
-  // Only a *client*-initiated cancellation can ever forfeit the deposit —
-  // admin_cancel_appointment never forfeits a business-initiated one, no
-  // matter how close to the slot (see docs/auditoria-seguridad-y-cumplimiento-good-boy.md).
-  const wouldForfeitIfClient =
-    appointment.status === "confirmed" &&
-    hoursUntilSlot < businessConfig.rules.cancellationCutoffHours;
+  // A confirmed deposit is preserved only by using the reschedule flow for a
+  // replacement slot inside the same calendar month. Cancelling the confirmed
+  // appointment means no replacement was agreed and forfeits the deposit.
+  const wouldForfeitIfClient = appointment.status === "confirmed";
 
   function run(action: () => Promise<AdminActionResult>, okText?: string) {
     startTransition(async () => {
@@ -493,6 +490,9 @@ export function AppointmentDetail({
               >
                 Marcar ausente
               </Button>
+              <span className="text-ink-soft text-xs">
+                No se cobra el saldo del servicio y la seña no se reintegra.
+              </span>
               <Button
                 variant="secondary"
                 onClick={() => run(() => reverseDepositPayment(appointment.id))}
@@ -556,7 +556,9 @@ export function AppointmentDetail({
                     </Button>
                     {wouldForfeitIfClient ? (
                       <span className="text-error text-xs font-bold">
-                        Al estar a menos de 48 h, la seña queda perdida.
+                        Si quiere conservar la seña, usá “Reprogramar” y elegí
+                        una fecha dentro del mismo mes. Si cancelás, la seña
+                        queda perdida.
                       </span>
                     ) : null}
                   </div>
@@ -576,7 +578,8 @@ export function AppointmentDetail({
                       Cancela Good Boy
                     </Button>
                     <span className="text-ink-soft text-xs">
-                      La seña nunca se pierde si cancela Good Boy.
+                      Ofrecé reprogramar sin costo o devolver la seña completa
+                      dentro de 24 h por transferencia.
                     </span>
                   </div>
                   <Button

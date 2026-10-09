@@ -14,9 +14,8 @@ export default function TerminosDeReservaPage() {
         Términos de reserva
       </h1>
       <p className="text-purple">
-        [PENDIENTE] Texto legal completo a definir por la dueña de{" "}
-        {businessConfig.name} (razón social/responsable:{" "}
-        {businessConfig.legalEntityName}).
+        [BORRADOR PENDIENTE DE REVISIÓN LEGAL] Responsable: Ayelén Argüello.
+        Good Boy es el nombre comercial del servicio.
       </p>
       <div className="text-ink-soft flex flex-col gap-2">
         <p>En resumen (sujeto al texto final):</p>
@@ -38,7 +37,10 @@ export default function TerminosDeReservaPage() {
             La seña se paga únicamente por transferencia bancaria. Cuando
             aprobamos tu solicitud te mandamos por email los datos para
             transferir y un enlace personal para subir una foto o captura del
-            comprobante dentro del plazo indicado.
+            comprobante. El plazo general es de{" "}
+            {businessConfig.deposit.dueHours} h desde la aprobación; si el turno
+            está próximo, se aplica el vencimiento anterior indicado por el
+            sistema.
           </li>
           <li>
             Verificamos cada comprobante a mano. El turno queda confirmado
@@ -54,6 +56,7 @@ export default function TerminosDeReservaPage() {
             horario vuelve a estar disponible.
           </li>
           <li>{businessConfig.cancellationPolicyText}</li>
+          <li>{businessConfig.absencePolicyText}</li>
           <li>
             Los precios publicados son orientativos; el precio final se confirma
             al recibir al perro.

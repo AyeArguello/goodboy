@@ -16,8 +16,8 @@ export function FinalCta() {
           Pedí un turno con anticipación
         </h2>
         <p className="text-charcoal m-0 max-w-[32em] text-lg">
-          Elegí un horario publicado y dejá tu solicitud. Te confirmamos por
-          WhatsApp.
+          Elegí un horario publicado y dejá tu solicitud. Te avisamos por email
+          en cada paso hasta confirmar el turno.
         </p>
         <CtaLink
           href="/turnos"

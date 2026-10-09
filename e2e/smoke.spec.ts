@@ -10,6 +10,15 @@ test.describe("smoke", () => {
       page.getByRole("link", { name: /solicitar turno/i }).first(),
     ).toBeVisible();
     await expect(page.getByRole("contentinfo")).toBeVisible();
+    await expect(
+      page.getByText(/te avisamos por email en cada paso/i),
+    ).toBeVisible();
+    const gecLink = page.getByRole("link", {
+      name: /visitar el sitio de gec soluciones digitales/i,
+    });
+    await expect(gecLink).toBeVisible();
+    await expect(gecLink).toHaveAttribute("href", "https://gecdigital.dev/");
+    await expect(gecLink).toHaveAttribute("target", "_blank");
   });
 
   test("header CTA navigates to the turnero", async ({ page }) => {

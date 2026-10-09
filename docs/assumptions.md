@@ -46,7 +46,9 @@ técnica (qué bloquea el build); esa es la vista legal/operativa completa.
 - **Objetivo diario:** hasta 3 perros de lunes a viernes (hoy suele atender 2), 1 los sábados. Duración real
   por perro: 2 h 30 min a 3 h 30 min.
 - **Anticipación mínima:** 24 h (no se toman turnos para el mismo día).
-- **Cancelación:** con **menos de 48 h** de anticipación, el cliente pierde la seña.
+- **Cancelación del cliente:** con 48 h o más puede conservar la seña únicamente si reprograma el turno
+  para otra fecha dentro del mismo mes. Si no reprograma dentro de ese período, o cancela con menos de
+  48 h, pierde la seña.
 - **Agenda:** abierta a futuro sin límite de "una semana por vez".
 - **Logo:** `assets/logo-good-boy.jpeg` (JPEG fondo blanco; no vectorizar/redibujar hasta tener SVG/PNG
   transparente).
@@ -96,10 +98,14 @@ técnica (qué bloquea el build); esa es la vista legal/operativa completa.
   - El slot no se reserva al elegirlo en el formulario; se revalida recién al enviar.
   - Código de solicitud: `GB-` + 8 caracteres sin ambiguos (sin `0/O/1/I`), generados con un generador
     criptográfico (`gen_random_bytes()`), no adivinable. Subido de 4 a 8 caracteres en v3 — ver §7.
-  - Cancelar un turno **confirmado** con menos de 48 h de anticipación pierde la seña **solo si cancela el
-    cliente**. Si cancela el negocio dentro de esas 48 h, el turno se cancela igual pero la seña nunca se
-    marca como perdida (`admin_cancel_appointment` distingue `p_initiated_by` — ver §7, era un bug real en
-    v2).
+  - Si el cliente pide cambiar un turno confirmado con 48 h o más, el admin debe usar **Reprogramar** y
+    elegir una fecha dentro del mismo mes para conservar la seña. Cancelar el turno confirmado sin esa
+    reprogramación marca la seña como perdida. Con menos de 48 h también se pierde.
+  - Si cancela Good Boy o existe fuerza mayor, el cliente elige entre reprogramar sin costo o la devolución
+    total de la seña dentro de 24 h mediante transferencia. Nunca se marca como perdida.
+  - Ante inasistencia, demora que impida prestar el servicio o imposibilidad de atender al perro, no se
+    cobra el saldo del servicio y la seña no se devuelve. El umbral operativo de demora todavía debe quedar
+    definido antes de publicar el texto legal definitivo.
   - Estado público: solo código, estado, fecha y dirección del local — nunca datos del cliente; se consulta
     por formulario (POST), nunca por la URL.
   - WhatsApp: `wa.me` con texto prearmado; nunca envío automático.
@@ -119,17 +125,13 @@ técnica (qué bloquea el build); esa es la vista legal/operativa completa.
 
 | Dato                                                                                 | Dónde se usa                                               | Bloquea                                                          |
 | ------------------------------------------------------------------------------------ | ---------------------------------------------------------- | ---------------------------------------------------------------- |
-| Nombre y apellido completos de la persona responsable + situación fiscal/CUIT        | Footer, `/privacidad`, `/terminos-de-reserva`, facturación | Bloquea cobrar online — "Good Boy" no identifica al responsable  |
+| Situación fiscal/CUIT (la responsable confirmada es Ayelén Argüello)                 | Footer, `/privacidad`, `/terminos-de-reserva`, facturación | Requiere revisión profesional antes de publicar                  |
 | Textos legales definitivos (privacidad, términos de reserva, reembolsos, revocación) | `/privacidad`, `/terminos-de-reserva`                      | Bloquea publicar (ambas páginas son placeholder `noindex`)       |
 | Validación legal/comercial del recargo por cuotas (1 cuota 7% / 3 cuotas 10,5%)      | `deposit.paymentOptions.enabled`                           | Bloquea cobrar recargo — ver auditoría, art. 37(c) Ley 25.065    |
-| Plazo para pagar la seña tras la aprobación (`deposit_due_hours`)                    | RPC `admin_approve_request`, pantalla "esperando seña"     | Alta — hoy usa un default de 24 h documentado como placeholder   |
-| Política de devolución/reprogramación si cancela el negocio o hay fuerza mayor       | Términos de reserva, acciones admin                        | Media                                                            |
-| Si la seña se puede pagar por transferencia **y** por link de MP, o solo una vía     | Instrucciones de pago                                      | Media (se asume que sí, ambas)                                   |
 | Logo en SVG/PNG transparente + favicon recortado                                     | Header, favicon, OG                                        | Alta                                                             |
 | Permiso de publicación de las 16 fotos + validación de captions                      | Galería, Hero                                              | Alta — ver auditoría "Aviso de fotos"                            |
 | Registrar `goodboy.com.ar` de verdad (dominio ya confirmado como disponible)         | `NEXT_PUBLIC_SITE_URL`, canonical, OG                      | Bloquea producción real (build ya no se bloquea por esto en dev) |
-| Cargar en Netlify la URL, anon key y service role del proyecto Supabase remoto       | Todo el backend                                            | Bloquea ir a producción (el build falla si faltan — ver §8)      |
-| Credenciales Resend (opcional)                                                       | Alertas por correo                                         | No bloquea (adaptador noop en dev)                               |
+| Comprar y verificar `goodboy.com.ar` en Resend; reemplazar el remitente temporal     | Correos a clientes fuera de la cuenta de Resend            | Bloquea el recorrido real de producción por email                |
 | Revisión final de abogado/a y contador/a + checklist completo                        | Ver `docs/auditoria-seguridad-y-cumplimiento-good-boy.md`  | Bloquea publicar ("No publicar todavía")                         |
 
 Ya no están pendientes (confirmados en v3, ver §7): dominio (`goodboy.com.ar`), correo admin
@@ -168,9 +170,8 @@ claves como variables de entorno de Netlify.
   dice que el recargo está en revisión —, y el build de producción **no** exige tener un recargo cargado
   (era un chequeo v2 que forzaba a inventar un número; en v3 "apagado a propósito" es un estado válido, no
   un pendiente sin completar). El paso de pago no calcula un total con tarjeta mientras siga apagado.
-- **Plazo de pago de seña:** `business_settings.deposit_due_hours`, default documentado de 24 h (marcado
-  como placeholder en `docs/assumptions.md` y en la propia UI del panel) hasta que la dueña confirme el
-  valor real.
+- **Plazo de pago de seña:** 24 h desde que se aprueba la solicitud; si el turno está próximo se aplica el
+  vencimiento anterior indicado por el sistema. Confirmado por la dueña el 2026-10-04.
 - **Expiración de señas vencidas:** patrón de "expiración perezosa" — cualquier lectura de disponibilidad
   (`public_availability`, `request_appointment`) trata una cita `awaiting_deposit` con `deposit_due_at`
   pasado como si ya estuviera libre, sin esperar un cron. Además, `expire_overdue_deposits()` es una RPC

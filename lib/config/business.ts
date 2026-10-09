@@ -2,10 +2,9 @@ import { getPublicEnv } from "../env/public";
 
 /**
  * Single source of truth for business data (NAP, WhatsApp, pricing, rules,
- * pending copy). Confirmed data is a literal constant. Anything not yet
- * confirmed by the owner comes from an env var with a `[PENDIENTE]`-tagged
- * dev fallback — see docs/assumptions.md section 2 for the full list and
- * why each one blocks launch.
+ * pending copy). Confirmed data is a literal constant. Anything that blocks
+ * launch comes from an env var with a `[PENDIENTE]`-tagged dev fallback — see
+ * docs/assumptions.md section 2 for the full list.
  *
  * `assertProductionBusinessConfig` is called from `next.config.ts` during
  * `next build` in production so the build fails loudly instead of shipping
@@ -18,15 +17,11 @@ function envOr(value: string | undefined, fallback: string): string {
   return value && value.trim().length > 0 ? value : fallback;
 }
 
-function envNumber(value: string | undefined, fallback: number): number {
-  const n = value ? Number(value) : NaN;
-  return Number.isFinite(n) ? n : fallback;
-}
-
 export const businessConfig = {
   name: "Good Boy — Peluquería Canina",
   legalDisclaimerName: "Good Boy",
-  // Legal/CUIT still pending — see docs/assumptions.md §2.
+  // Ayelén Argüello is the confirmed responsible person; fiscal/CUIT review
+  // remains pending before the final legal pages are published.
   legalEntityName: envOr(
     process.env.NEXT_PUBLIC_LEGAL_ENTITY_NAME,
     `${PENDING} razón social`,
@@ -44,26 +39,13 @@ export const businessConfig = {
   businessHoursText:
     "Lunes a viernes, turnos a las 9:00, 11:30 y 13:30 (cierre 16:00) · Sábados, único turno a las 11:00",
   cancellationPolicyText:
-    "Si cancelás con menos de 48 h de anticipación al turno, la seña no se reintegra.",
+    "Si cancelás con 48 h o más de anticipación, podés reprogramar para otra fecha dentro del mismo mes y conservar la seña. Si no reprogramás dentro de ese período, o cancelás con menos de 48 h, la seña no se reintegra.",
   businessCancellationPolicyText: envOr(
     process.env.NEXT_PUBLIC_BUSINESS_CANCELLATION_POLICY_TEXT,
-    `${PENDING} política de devolución si Good Boy cancela o hay fuerza mayor.`,
+    "Si Good Boy cancela o no puede prestar el servicio por fuerza mayor, podés elegir entre reprogramar sin costo o recibir la devolución total de la seña dentro de las 24 h mediante transferencia.",
   ),
-  sizeKgReference: {
-    pequeno: envOr(
-      process.env.NEXT_PUBLIC_SIZE_REF_PEQUENO_KG,
-      `${PENDING} kg`,
-    ),
-    mediano: envOr(
-      process.env.NEXT_PUBLIC_SIZE_REF_MEDIANO_KG,
-      `${PENDING} kg`,
-    ),
-    grande: envOr(process.env.NEXT_PUBLIC_SIZE_REF_GRANDE_KG, `${PENDING} kg`),
-  },
-  responseTimeText: envOr(
-    process.env.NEXT_PUBLIC_RESPONSE_TIME_TEXT,
-    `${PENDING} plazo de respuesta`,
-  ),
+  absencePolicyText:
+    "Ante inasistencia, demora que impida prestar el servicio o imposibilidad de atender al perro, no se cobra el saldo del servicio y la seña no se reintegra.",
   prices: {
     pequeno: { label: "Pequeño", range: "30.000–40.000" },
     mediano: { label: "Mediano", range: "40.000–50.000" },
@@ -82,9 +64,9 @@ export const businessConfig = {
   },
   deposit: {
     amountArs: 20000,
-    /** Hours the client has to pay after an admin approves the request. Placeholder default — see assumptions.md §2. */
-    dueHours: envNumber(process.env.NEXT_PUBLIC_DEPOSIT_DUE_HOURS, 24),
-    dueHoursConfirmed: process.env.NEXT_PUBLIC_DEPOSIT_DUE_HOURS !== undefined,
+    /** Confirmed by the owner on 2026-10-04. */
+    dueHours: 24,
+    dueHoursConfirmed: true,
     /**
      * Card-surcharge-by-installments model (docs/plan-web-good-boy.md §2). The
      * real business numbers are known (1 cuota = 7%, 3 cuotas = 10.5%), but

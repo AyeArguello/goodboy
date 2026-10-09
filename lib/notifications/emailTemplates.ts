@@ -244,9 +244,9 @@ export function renderAppointmentCancelled(
         ? `Tuvimos que cancelar el turno de ${d.dogName} (${d.whenLabel}). Lamentamos el inconveniente.`
         : `Registramos la cancelación del turno de ${d.dogName} (${d.whenLabel}).`;
   const money = d.depositForfeited
-    ? `Como se canceló con poca anticipación, la seña no se reintegra. ${d.cancellationPolicy}`
+    ? `Como el turno se canceló sin una reprogramación válida dentro del mismo mes, la seña no se reintegra. ${d.cancellationPolicy}`
     : d.kind === "business"
-      ? "Si ya habías transferido la seña, te avisamos por separado cuando registremos la devolución."
+      ? "Si ya habías transferido la seña, podés elegir reprogramar sin costo o recibir la devolución total dentro de las 24 h mediante transferencia."
       : "";
   return {
     subject:

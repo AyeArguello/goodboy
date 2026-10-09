@@ -9,8 +9,7 @@ import { formatDurationHM } from "@/lib/domain/datetime";
 /**
  * All landing copy in one typed place (per "centralizá copy/datos en
  * configuración tipada"). Text here is either confirmed by the design
- * handoff verbatim, or pulled from businessConfig so pending fields show a
- * single, consistent [PENDIENTE] marker everywhere they appear.
+ * handoff verbatim, or pulled from businessConfig.
  */
 
 export const nav = [
@@ -90,17 +89,14 @@ export const priceRows = [
   {
     key: "pequeno",
     ...businessConfig.prices.pequeno,
-    ref: businessConfig.sizeKgReference.pequeno,
   },
   {
     key: "mediano",
     ...businessConfig.prices.mediano,
-    ref: businessConfig.sizeKgReference.mediano,
   },
   {
     key: "grande",
     ...businessConfig.prices.grande,
-    ref: businessConfig.sizeKgReference.grande,
   },
 ] as const;
 

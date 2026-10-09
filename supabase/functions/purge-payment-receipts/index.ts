@@ -47,7 +47,24 @@ Deno.serve(async (request: Request) => {
   }
 
   const url = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const injectedSecretKeys = Deno.env.get("SUPABASE_SECRET_KEYS");
+  let serviceKey: string | undefined;
+
+  if (injectedSecretKeys) {
+    try {
+      const parsed = JSON.parse(injectedSecretKeys) as Record<string, unknown>;
+      serviceKey =
+        typeof parsed.default === "string" && parsed.default.length > 0
+          ? parsed.default
+          : undefined;
+    } catch {
+      return json({ error: "not_configured" }, 500);
+    }
+  } else {
+    // Local Supabase still injects only the legacy key. Keep this fallback for
+    // local development and CI while production prefers the revocable key.
+    serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  }
   if (!url || !serviceKey) return json({ error: "not_configured" }, 500);
 
   const client = createClient(url, serviceKey, {

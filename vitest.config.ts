@@ -15,7 +15,7 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./vitest.setup.ts"],
     include: ["**/*.{test,spec}.{ts,tsx}"],
-    exclude: ["node_modules", ".next", "e2e", "supabase"],
+    exclude: ["node_modules", ".next", ".kilo/worktrees", "e2e", "supabase"],
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],

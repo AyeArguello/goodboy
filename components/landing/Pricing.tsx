@@ -44,7 +44,7 @@ export function Pricing() {
             <span className="font-heading text-[clamp(28px,3vw,36px)] leading-tight font-bold tabular-nums">
               {p.range}
             </span>
-            <span className="text-ink-soft text-[15px]">ARS · {p.ref}</span>
+            <span className="text-ink-soft text-[15px]">ARS</span>
           </div>
         ))}
       </div>

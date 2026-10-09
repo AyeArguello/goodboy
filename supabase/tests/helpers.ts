@@ -303,13 +303,15 @@ export async function createFutureSlot(
   maxHoursFromNow?: number,
 ): Promise<string> {
   const svc = serviceClient();
-  // Two calls in one test must not collide on the same grid time: when the
-  // first valid slot is taken, move on to the next one inside the window.
+  const searchMaxHours = maxHoursFromNow ?? minHoursFromNow + 24 * 10;
+  let searchMinHours = minHoursFromNow;
+
+  // Two calls in one test must not collide on the same grid time. Advance
+  // beyond the exact occupied instant instead of adding one hour at a time:
+  // outside business hours, many consecutive hourly offsets resolve to the
+  // same next grid slot (for example, Thursday afternoon -> Monday 09:00).
   for (let step = 0; step < 40; step++) {
-    const startsAt = nextValidSlotStartsAt(
-      minHoursFromNow + step,
-      maxHoursFromNow,
-    );
+    const startsAt = nextValidSlotStartsAt(searchMinHours, searchMaxHours);
     const { data, error } = await svc
       .from("availability_slots")
       .insert({ starts_at: startsAt, is_published: true })
@@ -317,6 +319,12 @@ export async function createFutureSlot(
       .single();
     if (!error) return data.id as string;
     if (error.code !== "23505") throw error;
+
+    const occupiedOffsetHours =
+      (new Date(startsAt).getTime() - Date.now()) / 3_600_000;
+    // One second is enough to exclude the occupied instant while preserving
+    // every later schedule-valid time inside the caller's fixed window.
+    searchMinHours = occupiedOffsetHours + 1 / 3_600;
   }
   throw new Error("createFutureSlot: no free grid slot in the window");
 }
