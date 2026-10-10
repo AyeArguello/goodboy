@@ -28,7 +28,7 @@ técnica (qué bloquea el build); esa es la vista legal/operativa completa.
 - **Dominio confirmado:** `goodboy.com.ar` (disponible, verificado según
   `docs/plan-web-good-boy.md`) — falta **registrarlo** de verdad antes del lanzamiento; sigue viniendo de
   `NEXT_PUBLIC_SITE_URL`, nunca hardcodeado.
-- **Correo admin confirmado:** `ayelearguello.aa@gmail.com` (allowlist única por ahora).
+- **Correo admin confirmado:** `<correo-de-la-dueña>` (allowlist única por ahora).
 - **Días y horarios — grilla por día, no una sola grilla plana:**
   - Lunes a viernes: horarios de inicio publicables **09:00, 11:30 y 13:30**; cierre 16:00; máximo **3**
     turnos activos por día.
@@ -135,7 +135,7 @@ técnica (qué bloquea el build); esa es la vista legal/operativa completa.
 | Revisión final de abogado/a y contador/a + checklist completo                        | Ver `docs/auditoria-seguridad-y-cumplimiento-good-boy.md`  | Bloquea publicar ("No publicar todavía")                         |
 
 Ya no están pendientes (confirmados en v3, ver §7): dominio (`goodboy.com.ar`), correo admin
-(`ayelearguello.aa@gmail.com`), grilla de sábado.
+(`<correo-de-la-dueña>`), grilla de sábado.
 
 Ya no está pendiente (v4, ver §8): **el proyecto Supabase remoto existe** y tiene aplicadas las 8
 migraciones de `supabase/migrations/`. Lo que sigue abierto es operativo: decidir si ese proyecto es el de

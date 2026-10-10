@@ -61,4 +61,26 @@ describe("LoginForm", () => {
     expect(email).toHaveValue("admin@example.com");
     expect(password).toHaveValue("");
   });
+
+  it("explains why a recovery link failed and offers a new one", () => {
+    render(
+      <LoginForm
+        notAllowed={false}
+        resetDone={false}
+        recoveryProblem="El enlace de recuperación venció o ya se usó. Pedí uno nuevo."
+      />,
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "El enlace de recuperación venció o ya se usó.",
+    );
+    expect(
+      screen.getByRole("link", { name: "Pedir un enlace nuevo" }),
+    ).toHaveAttribute("href", "/admin/recuperar");
+  });
+
+  it("shows no recovery message on a normal visit", () => {
+    render(<LoginForm notAllowed={false} resetDone={false} />);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
 });

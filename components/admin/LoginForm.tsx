@@ -12,9 +12,12 @@ import { loginAdmin } from "@/app/admin/login/actions";
 export function LoginForm({
   notAllowed,
   resetDone,
+  recoveryProblem = null,
 }: {
   notAllowed: boolean;
   resetDone: boolean;
+  /** Why a recovery link did not work, when the visitor arrives from one. */
+  recoveryProblem?: string | null;
 }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -61,6 +64,20 @@ export function LoginForm({
         <p className="text-ink-soft m-0 text-center">
           Ingresá con el correo autorizado y tu contraseña.
         </p>
+        {recoveryProblem ? (
+          <div
+            role="alert"
+            className="bg-error-bg text-error m-0 flex flex-col items-center gap-1 rounded-lg px-3 py-2 text-center text-sm"
+          >
+            <p className="m-0">{recoveryProblem}</p>
+            <Link
+              href="/admin/recuperar"
+              className="font-heading text-purple font-semibold underline"
+            >
+              Pedir un enlace nuevo
+            </Link>
+          </div>
+        ) : null}
         {resetDone ? (
           <p
             role="status"

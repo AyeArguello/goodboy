@@ -6,6 +6,7 @@ const PUBLIC_ADMIN_PATHS = [
   "/admin/login",
   "/admin/recuperar",
   "/admin/auth/reset",
+  "/admin/auth/confirm",
 ];
 
 /**

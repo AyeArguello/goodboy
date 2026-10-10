@@ -219,7 +219,7 @@ Referencia oficial: [inscripción como monotributista](https://www.argentina.gob
 
 ## Cambios de configuración confirmados
 
-- `ADMIN_EMAIL_ALLOWLIST=ayelearguello.aa@gmail.com`
+- `ADMIN_EMAIL_ALLOWLIST=<correo-de-la-dueña>`
 - Dominio objetivo: `https://goodboy.com.ar`
 - Seña: transferencia **y** link de Mercado Pago.
 - Galería: 16 imágenes reales en `public/images/perros`.

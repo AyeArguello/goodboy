@@ -40,7 +40,7 @@ La decisión principal es **no construir una agenda totalmente automática**. La
 - WhatsApp: `+54 9 3512 72-2097` (`+5493512722097` para enlaces `wa.me`).
 - Instagram: [`@goodboy.peluca`](https://www.instagram.com/goodboy.peluca/).
 - Dominio confirmado como disponible: `goodboy.com.ar`; debe registrarse antes del lanzamiento.
-- Correo administrador permitido: `ayelearguello.aa@gmail.com`.
+- Correo administrador permitido: `<correo-de-la-dueña>`.
 
 ### Servicios confirmados
 
@@ -81,7 +81,7 @@ Texto obligatorio junto a cualquier precio: **“Valores orientativos. El precio
 
 ## 3. Información pendiente antes de publicar
 
-La información principal ya fue confirmada. Hay 16 fotografías reales en `public/images/perros`, el dominio objetivo es `goodboy.com.ar`, el correo admin es `ayelearguello.aa@gmail.com` y la seña admite transferencia o link de Mercado Pago. Restan estas definiciones antes del lanzamiento:
+La información principal ya fue confirmada. Hay 16 fotografías reales en `public/images/perros`, el dominio objetivo es `goodboy.com.ar`, el correo admin es `<correo-de-la-dueña>` y la seña admite transferencia o link de Mercado Pago. Restan estas definiciones antes del lanzamiento:
 
 - Permiso de publicación/copyright de las fotografías y validación de sus captions.
 - Nombre y apellido completos de la persona responsable. “Good Boy” es un nombre comercial, no identifica por sí solo al responsable de la base de datos ni al proveedor.
@@ -392,7 +392,7 @@ CONTEXTO REAL DEL NEGOCIO
 - El precio final se confirma al recibir y evaluar al perro según tamaño real, estado del manto y trabajo necesario.
 - Traslado: barrio Las Palmas sin cargo; barrios cercanos y barrio Jardín ARS 5.000–8.000; zonas más alejadas como Docta o Villa Libertador ARS 10.000–13.000. Es un único cargo por ida y vuelta. Cobertura sujeta a dirección y condiciones de seguridad; no publicar listas estigmatizantes de zonas.
 - Dirección: Manuel Toro 4047, Córdoba Capital, Córdoba, Argentina, CP 5010.
-- WhatsApp: +54 9 3512 72-2097. Instagram: @goodboy.peluca. Dominio: goodboy.com.ar. Admin: ayelearguello.aa@gmail.com.
+- WhatsApp: +54 9 3512 72-2097. Instagram: @goodboy.peluca. Dominio: goodboy.com.ar. Admin: <correo-de-la-dueña>.
 - Servicio 1: peluquería completa para mantos cortos y doble capa: baño, deslanado, limpieza de oídos, corte de uñas, limpieza de pulpejos, vaciado de glándulas perianales y terminación con tijeras.
 - Servicio 2: peluquería completa para mantos con crecimiento continuo: baño, corte de pelo, corte higiénico, corte de uñas, limpieza y depilado de oídos, limpieza de pulpejos y terminación final.
 - Pagos: efectivo, transferencia y tarjeta mediante link de Mercado Pago. La seña admite transferencia y link. Recargos informados: 7% en una cuota y 10,5% en tres; deben someterse a revisión legal antes de publicarse.
@@ -483,7 +483,7 @@ REGLAS NO NEGOCIABLES
 - Seña obligatoria: ARS 20.000, descontable del total. Cancelar con menos de 48 horas implica pérdida de la seña.
 - MVP de pago: verificación manual de transferencia o link de Mercado Pago desde el panel, con auditoría. Diseñar un adaptador para automatizar Checkout Pro posteriormente.
 - WhatsApp MVP mediante deep links con mensajes prearmados, no mediante scraping ni automatización no oficial.
-- NAP: Good Boy, Manuel Toro 4047, Córdoba Capital, Córdoba, Argentina, CP 5010; WhatsApp +5493512722097; Instagram https://www.instagram.com/goodboy.peluca/. Dominio objetivo goodboy.com.ar. Admin allowlist: ayelearguello.aa@gmail.com.
+- NAP: Good Boy, Manuel Toro 4047, Córdoba Capital, Córdoba, Argentina, CP 5010; WhatsApp +5493512722097; Instagram https://www.instagram.com/goodboy.peluca/. Dominio objetivo goodboy.com.ar. Admin allowlist: <correo-de-la-dueña>.
 - Toda información aún no confirmada debe vivir en configuración tipada; el build de producción debe fallar si faltan NAP, WhatsApp, dominio, correo admin, responsable legal, vencimiento de seña, política de devolución o decisión legal sobre cuotas/recargos.
 
 ETAPA 0 — AUDITORÍA Y PLAN

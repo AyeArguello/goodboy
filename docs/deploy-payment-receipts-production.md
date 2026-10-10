@@ -468,11 +468,11 @@ alguna, el build falla nombrándola, sin mostrar valores.
 | `NEXT_PUBLIC_SUPABASE_URL`                      | pública     | Confirmado: `https://rmfnrvidepyirtvjumgy.supabase.co`                                                           | ambos                       | build (CSP, bundle) y runtime                |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY`                 | pública     | Configurada con la clave nueva `sb_publishable_...` (el nombre de la variable se conserva por compatibilidad)    | ambos                       | build y runtime                              |
 | `SUPABASE_SERVICE_ROLE_KEY`                     | **secreta** | Configurada con la clave nueva `sb_secret_...`; nunca imprimir ni enviar al navegador                            | ambos                       | solo runtime (servidor) y la puerta de build |
-| `ADMIN_EMAIL_ALLOWLIST`                         | privada     | Confirmado: `ayelearguello.aa@gmail.com` (agregar el correo de quien administre)                                 | ambos                       | runtime y la puerta de build                 |
+| `ADMIN_EMAIL_ALLOWLIST`                         | privada     | Confirmado: `<correo-de-la-dueña>` (agregar el correo de quien administre)                                       | ambos                       | runtime y la puerta de build                 |
 | `RATE_LIMIT_HMAC_SECRET`                        | **secreta** | Configurada en Netlify con 48 bytes aleatorios criptográficos                                                    | ambos                       | runtime y la puerta de build                 |
 | `RESEND_API_KEY`                                | **secreta** | Configurada en Netlify como secreto en los cuatro contextos remotos, con permiso de solo envío                   | ambos                       | runtime y la puerta de build                 |
 | `RESEND_FROM_EMAIL`                             | privada     | Temporal: `onboarding@resend.dev`; cambiar a `turnos@goodboy.com.ar` después de comprar y verificar el dominio   | ambos                       | runtime y la puerta de build                 |
-| `OWNER_NOTIFICATION_EMAIL`                      | privada     | Configurado: `ayelearguello.aa@gmail.com`                                                                        | ambos                       | runtime y la puerta de build                 |
+| `OWNER_NOTIFICATION_EMAIL`                      | privada     | Configurado: `<correo-de-la-dueña>`                                                                              | ambos                       | runtime y la puerta de build                 |
 | `DEPOSIT_TRANSFER_ALIAS`                        | privada     | Configurado: `ayearguello.mp`                                                                                    | ambos                       | runtime y la puerta de build                 |
 | `NEXT_PUBLIC_LEGAL_ENTITY_NAME`                 | pública     | Configurado: `Ayelén Argüello` (Good Boy es el nombre comercial)                                                 | ambos                       | build (se incrusta) y la puerta              |
 | `NEXT_PUBLIC_BUSINESS_CANCELLATION_POLICY_TEXT` | pública     | Configurada: reprogramación sin costo o devolución total en 24 h por transferencia                               | ambos                       | build (se incrusta) y la puerta              |
@@ -578,6 +578,73 @@ Detener el despliegue y no seguir cuando:
 - una credencial aparece en consola, logs, HTML o archivos del repo;
 - el consumo de créditos del mes se acerca a 300 (al agotarlos el sitio se
   pausa).
+
+## 10b. Recuperación de contraseña del panel: configuración de Supabase Auth
+
+El código ofrece dos caminos para el enlace del correo de recuperación; hay que
+dejar configurado el segundo, que es el que funciona desde cualquier navegador
+o dispositivo:
+
+| Camino                                   | Plantilla "Reset password" | Ruta                       | Limitación                                                                                              |
+| ---------------------------------------- | -------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------- |
+| PKCE (plantilla por defecto de Supabase) | `{{ .ConfirmationURL }}`   | `/admin/auth/reset?code=…` | Solo funciona en el mismo navegador donde se pidió la recuperación (necesita su cookie de verificación) |
+| `token_hash` (recomendado)               | ver abajo                  | `/admin/auth/confirm`      | Ninguna: se valida en el servidor con `verifyOtp` y el token se gasta recién al tocar "Continuar"       |
+
+Pasos en el Dashboard de Supabase (Authentication). Nada de esto se versiona en
+Git; cada cambio requiere autorización explícita y se verifica después:
+
+1. **URL Configuration** (estado verificado el 10/10/2026: ya correcto)
+   - Site URL: `https://goodboy.com.ar`.
+   - Redirect URLs que quedan: `https://goodboy.com.ar/admin/auth/reset`, el
+     mismo camino en `clinquant-pithivier-afc538.netlify.app` y el comodín de
+     los Deploy Previews `https://**--clinquant-pithivier-afc538.netlify.app/**`.
+     Se quitan las entradas de `/admin/auth/callback` (esa ruta ya no existe)
+     y `http://localhost:3000/**` (no hace falta en producción).
+2. **Emails > SMTP Settings** (ya configurado): SMTP propio de Resend
+   (`smtp.resend.com:465`, usuario `resend`, remitente
+   `turnos@goodboy.com.ar`, 30 correos por hora). No hay que tocarlo.
+3. **Emails > Templates > Reset password**: reemplazar el enlace por
+
+   ```html
+   <h2>Crear una contraseña nueva</h2>
+   <p>Recibimos un pedido para recuperar el acceso al panel de Good Boy.</p>
+   <p>
+     <a
+       href="{{ .SiteURL }}/admin/auth/confirm?token_hash={{ .TokenHash }}&type=recovery"
+       >Crear contraseña nueva</a
+     >
+   </p>
+   <p>
+     Si no fuiste vos, ignorá este correo. El enlace vence y sirve una sola vez.
+   </p>
+   ```
+
+4. **Rate Limits**: dejar el límite de correos acorde al SMTP propio y mantener
+   los 60 segundos entre pedidos de recuperación (la aplicación ya muestra ese
+   aviso).
+5. **Password**: longitud mínima de 14 caracteres (estaba en 6). El formulario
+   de la aplicación ya exige 14 con mayúscula, minúscula, número y símbolo, pero
+   el mínimo de Supabase es el que vale para cualquier otro camino.
+6. **Sign In / Providers**: mantener "Allow new users to sign up" desactivado
+   (hoy lo está) y el proveedor Email como único activo.
+
+Verificación posterior (con un correo real de la dueña):
+
+1. En `/admin/recuperar` pedir el enlace: llega el correo con el botón "Crear
+   contraseña nueva".
+2. Abrir el enlace en **otro navegador o desde el celular**: se ve el botón
+   "Continuar" (abrirlo no gasta el enlace) y, al tocarlo, el formulario de
+   contraseña nueva.
+3. Guardar una contraseña de 14 caracteres o más y entrar al panel con ella;
+   la contraseña anterior ya no sirve.
+4. Volver a abrir el mismo enlace: dice que venció o ya se usó y ofrece pedir
+   otro.
+5. Pedir otro enlace antes de que pase un minuto: la pantalla pide esperar.
+
+Cuando falla, la aplicación registra en los logs de Netlify solo la clase de
+error, el código de Auth y el estado HTTP, sin el token ni el correo; los
+motivos más comunes se distinguen en la pantalla de login (enlace vencido o ya
+usado, enlace abierto en otro navegador, correo sin acceso).
 
 ## 11. Rollback
 

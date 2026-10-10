@@ -5,7 +5,7 @@
 1. Andá a `tudominio.com/admin/login` desde el celular o la compu.
 2. Escribí el correo autorizado y tu contraseña, y tocá **"Ingresar"**.
 3. Cuando termines, tocá **"Cerrar sesión"** (en el celular aparece como **"Salir"**).
-4. Si olvidaste la contraseña, tocá **"Olvidé mi contraseña"**. El enlace recibido vence a los 10 minutos y solo sirve para crear una contraseña nueva.
+4. Si olvidaste la contraseña, tocá **"Olvidé mi contraseña"**. El correo trae un botón "Crear contraseña nueva"; funciona desde cualquier navegador o el celular, se usa una sola vez y solo sirve para crear una contraseña nueva. Si pedís otro enlace, esperá un minuto entre pedidos.
 
 ## Todos los días: pestaña "Hoy"
 

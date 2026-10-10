@@ -13,7 +13,7 @@ env:
   NEXT_PUBLIC_SITE_URL: https://ci-build.example.com
   NEXT_PUBLIC_LEGAL_ENTITY_NAME: "Razón social de ejemplo para CI"
   NEXT_PUBLIC_BUSINESS_CANCELLATION_POLICY_TEXT: "Texto de ejemplo para CI."
-  ADMIN_EMAIL_ALLOWLIST: ci-admin@example.com
+  ADMIN_EMAIL_ALLOWLIST: ci-admin@example.com,ci-admin-mobile@example.com
   RATE_LIMIT_HMAC_SECRET: ci-not-a-real-hmac-secret-0123456789abcdef
   SUPABASE_SERVICE_ROLE_KEY: ci-not-a-real-service-role-key
   RESEND_API_KEY: re_ci_not_a_real_key
