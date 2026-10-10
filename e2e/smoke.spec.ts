@@ -75,7 +75,11 @@ test.describe("smoke", () => {
   test("admin routes redirect to login when unauthenticated", async ({
     page,
   }) => {
-    await page.goto("/admin/hoy");
+    // The assertion only needs the redirected document. Waiting for the full
+    // `load` event makes this smoke check depend on every development asset
+    // finishing under CI load, which can leave an otherwise successful
+    // redirect waiting until Playwright's navigation timeout.
+    await page.goto("/admin/hoy", { waitUntil: "domcontentloaded" });
     await expect(page).toHaveURL(/\/admin\/login/);
     await expect(
       page.getByRole("heading", { name: "Entrar al panel" }),
