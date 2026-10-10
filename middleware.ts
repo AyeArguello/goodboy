@@ -2,14 +2,18 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getPublicEnv } from "@/lib/env/public";
 
-const PUBLIC_ADMIN_PATHS = ["/admin/login", "/admin/auth/callback"];
+const PUBLIC_ADMIN_PATHS = [
+  "/admin/login",
+  "/admin/recuperar",
+  "/admin/auth/reset",
+];
 
 /**
  * Route-level gate for /admin/*. It only checks "is there a session", never
  * business authorization. The actual authorization boundary is the database —
  * is_admin() inside every RPC, and RLS on every table — so a session without
- * an admin_profiles row (never created for a non-allowlisted email; see
- * app/admin/auth/callback) can load the shell but every data call fails.
+ * an admin_profiles row (never created for a non-allowlisted email) can load
+ * the shell but every data call fails.
  *
  * Kept as `middleware.ts` (edge runtime), NOT as Next 16's `proxy.ts`
  * (Node.js runtime): the Netlify Next.js adapter currently cannot package the
@@ -47,11 +51,9 @@ export async function middleware(request: NextRequest) {
     },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data } = await supabase.auth.getClaims();
 
-  if (!user) {
+  if (!data?.claims) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/admin/login";
     return NextResponse.redirect(loginUrl);

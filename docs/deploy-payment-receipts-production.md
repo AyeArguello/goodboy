@@ -429,7 +429,7 @@ La primera falla coincide con el issue abierto
 | `next/image`                                                        | Soportado: usa el Netlify Image CDN. Todas las imágenes son locales (`remotePatterns` vacío)                                           |
 | Middleware del panel                                                | Solo como `middleware.ts` (edge); ver tabla de pruebas                                                                                 |
 | Subida directa a Supabase Storage                                   | No pasa por Netlify (URL firmada del navegador a Supabase); no afecta el límite de cuerpo de las funciones                             |
-| Cookies de Supabase Auth y callback del magic link                  | Sin cambios de código; confirmar en el Deploy Preview y agregar las URLs de Netlify en Supabase Auth                                   |
+| Cookies de Supabase Auth, login y recuperación de contraseña        | Confirmar login/logout y agregar `/admin/auth/reset` a las URLs permitidas de Supabase Auth                                            |
 | CSP y cabeceras (`next.config.ts` `headers()`)                      | El adaptador las aplica; la CSP usa la URL de Supabase del build. Verificar con `curl -I` en el preview                                |
 | Variables privadas (service role, Resend, HMAC)                     | Solo se leen en código de servidor (`server-only`); el CI verifica que no lleguen al bundle                                            |
 | Puerta de producción (`next.config.ts`)                             | Se ejecuta en **cualquier** `next build`, también en Deploy Preview: todas las variables obligatorias deben existir en ambos contextos |
@@ -543,8 +543,8 @@ La base (migraciones, función, secreto, Vault y cron) ya está lista. El resto:
    cada nombre existe en el contexto correcto (los secretos no se muestran).
 3. **En Supabase Auth** (Dashboard > Authentication > URL Configuration) agregar
    a las URLs de redirección el subdominio `https://<sitio>.netlify.app/**` (y
-   luego el dominio propio) y fijar el Site URL. Sin esto el magic link del
-   panel no vuelve al sitio.
+   luego el dominio propio) y fijar el Site URL. Esto permite que el enlace de
+   recuperación de contraseña vuelva a `/admin/auth/reset`.
 4. **Primer despliegue = Deploy Preview**, no producción: abrir un pull request
    con un cambio mínimo (o usar `netlify deploy` sin `--prod`). Un despliegue a
    producción cuesta 15 créditos; el primero recién cuando el preview pase.
@@ -554,8 +554,9 @@ La base (migraciones, función, secreto, Vault y cron) ya está lista. El resto:
      y `Referrer-Policy` de `next.config.ts`;
    - `/admin` sin sesión redirige a `/admin/login` (confirma `middleware.ts`);
    - `/turnos` lista horarios reales y `/turnos/estado` responde;
-   - el login del panel con un correo de la allowlist envía el magic link, el
-     enlace vuelve a `/admin/auth/callback` y deja entrar;
+   - el login del panel acepta solo el correo autorizado + contraseña válida;
+   - "Olvidé mi contraseña" vuelve a `/admin/auth/reset`, permite crear una clave nueva y revoca la sesión de recuperación;
+   - "Cerrar sesión" elimina la sesión local y protege nuevamente `/admin`;
    - `/turnos/comprobante` sin enlace muestra "Falta el enlace";
    - ninguna credencial aparece en la respuesta de las páginas ni en el log del
      build (buscar el nombre de las variables secretas en el HTML y en

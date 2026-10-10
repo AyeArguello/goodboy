@@ -2,74 +2,114 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   rpc: vi.fn(),
-  signInWithOtp: vi.fn(),
+  serviceUpsert: vi.fn(),
+  signInWithPassword: vi.fn(),
+  signOut: vi.fn(),
+  profileMaybeSingle: vi.fn(),
   getServerEnv: vi.fn(),
+  revalidatePath: vi.fn(),
 }));
 
-vi.mock("@/lib/config/business", () => ({
-  siteUrl: () => "https://goodboy.com.ar",
-}));
+vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
 vi.mock("@/lib/env/server", () => ({
   getServerEnv: mocks.getServerEnv,
 }));
+vi.mock("@/lib/security/clientKey", () => ({
+  getClientKey: async () => "hashed-client",
+}));
 vi.mock("@/lib/supabase/service", () => ({
-  getServiceSupabaseClient: () => ({ rpc: mocks.rpc }),
+  getServiceSupabaseClient: () => ({
+    rpc: mocks.rpc,
+    from: () => ({ upsert: mocks.serviceUpsert }),
+  }),
 }));
 vi.mock("@/lib/supabase/server", () => ({
   getServerSupabaseClient: async () => ({
-    auth: { signInWithOtp: mocks.signInWithOtp },
+    auth: {
+      signInWithPassword: mocks.signInWithPassword,
+      signOut: mocks.signOut,
+    },
+    from: () => ({
+      select: () => ({
+        eq: () => ({ maybeSingle: mocks.profileMaybeSingle }),
+      }),
+    }),
   }),
 }));
 
-import { sendAdminLoginLink } from "./actions";
+import { loginAdmin } from "./actions";
 
-describe("sendAdminLoginLink", () => {
+describe("loginAdmin", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    mocks.rpc.mockReset();
-    mocks.signInWithOtp.mockReset();
+    for (const mock of Object.values(mocks)) mock.mockReset();
     mocks.getServerEnv.mockReturnValue({
       ADMIN_EMAIL_ALLOWLIST: ["admin@example.com"],
     });
+    mocks.rpc.mockResolvedValue({ error: null });
+    mocks.profileMaybeSingle.mockResolvedValue({
+      data: { id: "user-1" },
+      error: null,
+    });
+    mocks.signInWithPassword.mockResolvedValue({
+      data: { user: { id: "user-1", email: "admin@example.com" } },
+      error: null,
+    });
   });
 
-  it("continues with Supabase Auth if the private pre-limit is unavailable", async () => {
+  it("fails closed when the private brute-force limiter is unavailable", async () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     mocks.rpc.mockResolvedValue({ error: new Error("invalid api key") });
-    mocks.signInWithOtp.mockResolvedValue({ error: null });
 
-    await expect(sendAdminLoginLink("admin@example.com")).resolves.toEqual({
-      ok: true,
-    });
-    expect(mocks.signInWithOtp).toHaveBeenCalledWith({
-      email: "admin@example.com",
-      options: {
-        emailRedirectTo: "https://goodboy.com.ar/admin/auth/callback",
-      },
-    });
-  });
-
-  it("reports an Auth delivery failure instead of claiming success", async () => {
-    mocks.rpc.mockResolvedValue({ error: null });
-    mocks.signInWithOtp.mockResolvedValue({
-      error: { code: "smtp_failed", status: 500 },
-    });
-    vi.spyOn(console, "error").mockImplementation(() => undefined);
-
-    const result = await sendAdminLoginLink("admin@example.com");
-    expect(result).toEqual({
+    await expect(
+      loginAdmin("admin@example.com", "Secret1234!abcd"),
+    ).resolves.toEqual({
       ok: false,
       error:
-        "No pudimos enviar el enlace. Esperá un minuto y volvé a intentarlo.",
+        "No pudimos iniciar sesión. Esperá unos minutos y volvé a intentarlo.",
+    });
+    expect(mocks.signInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it("does not submit a non-allowlisted address to Auth", async () => {
+    await expect(
+      loginAdmin("other@example.com", "Secret1234!abcd"),
+    ).resolves.toEqual({
+      ok: false,
+      error: "Correo o contraseña incorrectos.",
+    });
+    expect(mocks.signInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it("returns the same generic error for invalid credentials", async () => {
+    mocks.signInWithPassword.mockResolvedValue({
+      data: { user: null },
+      error: { code: "invalid_credentials" },
+    });
+
+    await expect(
+      loginAdmin("admin@example.com", "Wrong1234!abcd"),
+    ).resolves.toEqual({
+      ok: false,
+      error: "Correo o contraseña incorrectos.",
     });
   });
 
-  it("does not call Auth for an address outside the allowlist", async () => {
-    mocks.rpc.mockResolvedValue({ error: null });
+  it("creates the authorized profile only after a valid password login", async () => {
+    mocks.profileMaybeSingle.mockResolvedValue({ data: null, error: null });
+    mocks.serviceUpsert.mockResolvedValue({ error: null });
 
-    await expect(sendAdminLoginLink("other@example.com")).resolves.toEqual({
-      ok: true,
+    await expect(
+      loginAdmin("ADMIN@example.com", "Secret1234!abcd"),
+    ).resolves.toEqual({ ok: true });
+    expect(mocks.signInWithPassword).toHaveBeenCalledWith({
+      email: "admin@example.com",
+      password: "Secret1234!abcd",
     });
-    expect(mocks.signInWithOtp).not.toHaveBeenCalled();
+    expect(mocks.serviceUpsert).toHaveBeenCalledWith({
+      id: "user-1",
+      email: "admin@example.com",
+    });
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin", "layout");
   });
 });

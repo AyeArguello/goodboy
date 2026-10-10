@@ -18,12 +18,14 @@ port = 54323
 [auth]
 enabled = true
 site_url = "http://127.0.0.1:3000"
-additional_redirect_urls = ["http://127.0.0.1:3000/admin"]
+additional_redirect_urls = [
+  "http://127.0.0.1:3000/admin/auth/reset",
+  "http://localhost:3100/admin/auth/reset",
+]
 jwt_expiry = 3600
-# Real access control is the ADMIN_EMAIL_ALLOWLIST check in the magic-link
-# callback (app/admin/auth/callback), which signs out anyone not allowlisted
-# immediately after their first login. This just lets the OTP flow work.
-enable_signup = true
+# This is a closed, single-owner admin panel. Users are provisioned explicitly;
+# the public application must never create Auth accounts.
+enable_signup = false
 
 [auth.email]
 enable_confirmations = false

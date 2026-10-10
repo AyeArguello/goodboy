@@ -210,7 +210,7 @@ No pedir foto en el MVP para evitar almacenamiento y moderación. La pantalla fi
 
 ### Panel administrativo mínimo
 
-- Acceso mediante magic link a un correo autorizado.
+- Acceso mediante correo y contraseña para una cuenta autorizada, con recuperación por email y cierre de sesión.
 - Vista “Hoy” y agenda por semana.
 - Crear, publicar, ocultar o bloquear slots.
 - Acción “Publicar siguiente horario” para replicar la forma progresiva de la agenda.
@@ -437,7 +437,7 @@ Diseñar en pasos breves y mobile-first:
 Diseñar estados: loading, sin disponibilidad, slot seleccionado, slot tomado durante el proceso, validación de campos, error de red, solicitud pendiente de revisión, esperando seña, pago en verificación, confirmada, expirada, reprogramada, cancelada con devolución y cancelada con seña perdida. Nunca poner datos personales en una URL o pantalla compartible.
 
 PANEL ADMIN RESPONSIVE
-Diseñar login por magic link, dashboard “Hoy”, agenda semanal, lista de solicitudes, detalle del perro, publicación/ocultamiento de slots, “Publicar siguiente horario”, aprobar/rechazar, registrar seña, confirmar/reprogramar/cancelar/completar y botones de WhatsApp prearmados. Aplicar un máximo de 3 turnos de lunes a viernes y un único turno los sábados a las 11:00. Mostrar una advertencia informativa para el intervalo de 2 horas entre 11:30 y 13:30 de lunes a viernes, pero permitir la grilla aprobada. Debe ser extremadamente simple para una persona acostumbrada a agenda en papel y funcionar muy bien en teléfono.
+Diseñar login con correo y contraseña, recuperación segura, dashboard “Hoy”, agenda semanal, lista de solicitudes, detalle del perro, publicación/ocultamiento de slots, “Publicar siguiente horario”, aprobar/rechazar, registrar seña, confirmar/reprogramar/cancelar/completar y botones de WhatsApp prearmados. Aplicar un máximo de 3 turnos de lunes a viernes y un único turno los sábados a las 11:00. Mostrar una advertencia informativa para el intervalo de 2 horas entre 11:30 y 13:30 de lunes a viernes, pero permitir la grilla aprobada. Debe ser extremadamente simple para una persona acostumbrada a agenda en papel y funcionar muy bien en teléfono.
 
 ACCESIBILIDAD Y RESPONSIVE
 - Diseñar primero a 390 px y luego 768, 1024 y 1440 px.
@@ -522,7 +522,7 @@ ETAPA 4 — DATOS Y SEGURIDAD
 4. Implementá índice único parcial para impedir más de una cita activa por slot.
 5. Implementá una función transaccional/RPC de reserva: bloquear slot con `FOR UPDATE`, revalidar publicación, futuro, 24 h, fecha no bloqueada, límite diario y ausencia de cita activa; recién entonces insertar cita y evento.
 6. RLS deny-by-default. El público solo consulta disponibilidad anonimizada; no tiene SELECT sobre citas ni pagos. Las escrituras públicas pasan por servidor/RPC controlada.
-7. Admin basado en Supabase Auth magic link, allowlist de correo y rutas protegidas.
+7. Admin basado en Supabase Auth con correo y contraseña, allowlist, recuperación segura y rutas protegidas.
 8. Sanitizá logs y agregá rate limiting/honeypot. Prepará Turnstile detrás de feature flag.
 9. Nunca confíes en estado, precio, cupo ni fecha enviados por el navegador.
 

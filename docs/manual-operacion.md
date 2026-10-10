@@ -3,9 +3,9 @@
 ## Entrar
 
 1. Andá a `tudominio.com/admin/login` desde el celular o la compu.
-2. Escribí tu correo y tocá **"Enviarme el enlace"**.
-3. Abrí el correo (revisá spam si no llega en 1-2 minutos) y tocá el enlace. Te deja adentro.
-4. El enlace vence a los 15 minutos. Si se venció, volvé a pedir uno nuevo.
+2. Escribí el correo autorizado y tu contraseña, y tocá **"Ingresar"**.
+3. Cuando termines, tocá **"Cerrar sesión"** (en el celular aparece como **"Salir"**).
+4. Si olvidaste la contraseña, tocá **"Olvidé mi contraseña"**. El enlace recibido vence a los 10 minutos y solo sirve para crear una contraseña nueva.
 
 ## Todos los días: pestaña "Hoy"
 
@@ -89,5 +89,5 @@ borrar nada; podés volver a mostrarlo cuando quieras (siempre que el día no es
 ## Si algo no funciona
 
 - La página no carga: probá recargarla o cambiar de red (wifi/datos).
-- No te llega el enlace de acceso: revisá spam, esperá 2 minutos, volvé a pedirlo.
+- No te llega el enlace de recuperación: revisá spam, esperá unos minutos y volvé a pedirlo una sola vez.
 - Cualquier otra cosa rara: avisale a quien te desarrolló el sitio con una captura de pantalla.

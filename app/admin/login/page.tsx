@@ -9,8 +9,13 @@ export const metadata: Metadata = {
 export default async function AdminLoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; reset?: string }>;
 }) {
-  const { error } = await searchParams;
-  return <LoginForm notAllowed={error === "not_allowed"} />;
+  const { error, reset } = await searchParams;
+  return (
+    <LoginForm
+      notAllowed={error === "not_allowed" || error === "recovery"}
+      resetDone={reset === "done"}
+    />
+  );
 }

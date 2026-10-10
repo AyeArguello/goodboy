@@ -80,6 +80,19 @@ test.describe("smoke", () => {
     await expect(
       page.getByRole("heading", { name: "Entrar al panel" }),
     ).toBeVisible();
+    await expect(page.getByLabel("Correo")).toHaveAttribute(
+      "autocomplete",
+      "username",
+    );
+    await expect(page.getByLabel("Contraseña")).toHaveAttribute(
+      "autocomplete",
+      "current-password",
+    );
+    await page.getByRole("link", { name: "Olvidé mi contraseña" }).click();
+    await expect(page).toHaveURL(/\/admin\/recuperar/);
+    await expect(
+      page.getByRole("heading", { name: "Recuperar contraseña" }),
+    ).toBeVisible();
   });
 
   test("keyboard focus is visible on the primary CTA", async ({ page }) => {

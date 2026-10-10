@@ -45,8 +45,8 @@ Hallazgos técnicos P0/P1 de la sección "Hallazgos técnicos priorizados":
   acepta `127.0.0.1`/`localhost`); corresponde al job
   `db-and-e2e` de GitHub Actions (Docker + `supabase start`) o a una máquina local con Docker.
 - **P1.1 Cabeceras HTTP: corregido en v3** (`next.config.ts`). CSP con `'unsafe-inline'`, no estricta.
-- **P1.3 Login admin server-side: corregido en v3** (allowlist antes de enviar el magic link, respuesta
-  uniforme, throttle).
+- **P1.3 Login admin server-side: corregido** (correo + contraseña, allowlist previa, respuesta uniforme,
+  throttle por IP anonimizada que falla cerrado, alta pública desactivada, recuperación acotada y cierre de sesión).
 - **P1.4 Rate limiter privado: parcial.** La clave usa HMAC y se revocó `EXECUTE` de `PUBLIC` sobre
   `enforce_rate_limit`. Sigue sin existir una limpieza de claves expiradas en `request_throttle`.
 - **P1.7 Hardening PostgreSQL: parcial.** v4 fijó `search_path = ''` en las tres funciones que no son
@@ -203,7 +203,7 @@ Referencia oficial: [inscripción como monotributista](https://www.argentina.gob
 
 1. **Cabeceras HTTP:** CSP con `frame-ancestors 'none'`, HSTS en producción, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`; ajustar CSP para Supabase/Resend/Turnstile solo si se usan.
 2. **MFA para admin:** requerir TOTP/AAL2 para datos de clientes y pagos.
-3. **Login admin server-side:** validar allowlist antes de enviar OTP, rate limit y mensaje uniforme para evitar spam/enumeración. Actualmente cualquier email puede solicitar magic link y recién se rechaza en callback.
+3. **Login admin server-side:** resuelto con correo + contraseña, allowlist previa, throttle por IP anonimizada, mensaje uniforme y alta pública desactivada. La recuperación por email está limitada al correo autorizado.
 4. **Rate limiter privado:** no guardar IP cruda indefinidamente. HMAC con secreto rotatable, confiar solo en cabecera del proveedor de hosting y eliminar claves expiradas.
 5. **Retención y DSAR:** job de borrado/anonimización, proceso para acceso/corrección/supresión y registro de ejecución.
 6. **Backups/restore:** backups cifrados, prueba de restauración, responsables e incidente.

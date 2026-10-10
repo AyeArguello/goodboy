@@ -1,112 +1,106 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, type FormEvent } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { TextField } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { businessConfig } from "@/lib/config/business";
-import { sendAdminLoginLink } from "@/app/admin/login/actions";
+import { loginAdmin } from "@/app/admin/login/actions";
 
-export function LoginForm({ notAllowed }: { notAllowed: boolean }) {
+export function LoginForm({
+  notAllowed,
+  resetDone,
+}: {
+  notAllowed: boolean;
+  resetDone: boolean;
+}) {
+  const router = useRouter();
   const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [resendIn, setResendIn] = useState(0);
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(
-    notAllowed ? "Ese correo no tiene acceso al panel." : null,
+    notAllowed ? "La sesión no es válida o no tiene acceso al panel." : null,
   );
 
-  useEffect(() => {
-    if (!sent || resendIn <= 0) return;
-    const timer = window.setTimeout(
-      () => setResendIn((value) => value - 1),
-      1000,
-    );
-    return () => window.clearTimeout(timer);
-  }, [resendIn, sent]);
-
-  async function sendLink() {
-    setSending(true);
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSubmitting(true);
     setError(null);
-    const result = await sendAdminLoginLink(email);
-    setSending(false);
+    const result = await loginAdmin(email, password);
+    setSubmitting(false);
+
     if (!result.ok) {
+      setPassword("");
       setError(result.error);
       return;
     }
-    setSent(true);
-    setResendIn(60);
+
+    router.replace("/admin/hoy");
+    router.refresh();
   }
 
   return (
     <main className="flex min-h-screen items-center justify-center px-5 py-8">
-      <div className="flex w-full max-w-sm flex-col items-stretch gap-5">
+      <form
+        onSubmit={submit}
+        className="flex w-full max-w-sm flex-col items-stretch gap-5"
+      >
         <Image
           src="/images/logo-good-boy.jpg"
           alt={businessConfig.name}
           width={120}
           height={120}
           className="mx-auto size-30"
+          priority
         />
-
-        {!sent ? (
-          <>
-            <h1 className="font-heading m-0 text-center text-2xl font-bold">
-              Entrar al panel
-            </h1>
-            <p className="text-ink-soft m-0 text-center">
-              Te mandamos un enlace a tu correo. No hace falta contraseña.
-            </p>
-            <TextField
-              label="Correo"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              error={error ?? undefined}
-            />
-            <Button
-              onClick={sendLink}
-              loading={sending}
-              loadingText="Enviando…"
-              disabled={!email}
-            >
-              Enviarme el enlace
-            </Button>
-          </>
-        ) : (
-          <div
+        <h1 className="font-heading m-0 text-center text-2xl font-bold">
+          Entrar al panel
+        </h1>
+        <p className="text-ink-soft m-0 text-center">
+          Ingresá con el correo autorizado y tu contraseña.
+        </p>
+        {resetDone ? (
+          <p
             role="status"
-            className="border-charcoal flex flex-col items-center gap-2.5 rounded-xl border-[1.5px] bg-white p-6 text-center"
+            className="border-success-line bg-success-bg m-0 rounded-lg border px-3 py-2 text-center text-sm"
           >
-            <h1 className="font-heading m-0 text-xl font-bold">
-              Revisá tu correo
-            </h1>
-            <p className="text-ink-soft m-0">
-              Mandamos un enlace a{" "}
-              <strong className="text-charcoal">{email}</strong>. Abrilo desde
-              este teléfono. Vence en 15 minutos.
-            </p>
-            {error ? (
-              <p role="alert" className="text-error m-0 text-sm">
-                {error}
-              </p>
-            ) : null}
-            <Button
-              variant="secondary"
-              onClick={sendLink}
-              loading={sending}
-              loadingText="Reenviando…"
-              disabled={sending || resendIn > 0}
-              className="mt-1.5"
-            >
-              {resendIn > 0
-                ? `Podés reenviar en ${resendIn} s`
-                : "Reenviar enlace"}
-            </Button>
-          </div>
-        )}
-      </div>
+            Contraseña actualizada. Ya podés ingresar.
+          </p>
+        ) : null}
+        <TextField
+          label="Correo"
+          type="email"
+          autoComplete="username"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          required
+        />
+        <TextField
+          label="Contraseña"
+          type="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          error={error ?? undefined}
+          required
+        />
+        <Button
+          type="submit"
+          loading={submitting}
+          loadingText="Ingresando…"
+          disabled={!email || !password}
+        >
+          Ingresar
+        </Button>
+        <Link
+          href="/admin/recuperar"
+          className="font-heading text-purple min-h-11 self-center px-3 py-2.5 text-sm font-semibold underline"
+        >
+          Olvidé mi contraseña
+        </Link>
+      </form>
     </main>
   );
 }

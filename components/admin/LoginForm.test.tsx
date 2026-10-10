@@ -3,56 +3,62 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LoginForm } from "./LoginForm";
 
-const { sendAdminLoginLink } = vi.hoisted(() => ({
-  sendAdminLoginLink: vi.fn(),
+const mocks = vi.hoisted(() => ({
+  loginAdmin: vi.fn(),
+  replace: vi.fn(),
+  refresh: vi.fn(),
 }));
 
-vi.mock("@/app/admin/login/actions", () => ({ sendAdminLoginLink }));
+vi.mock("@/app/admin/login/actions", () => ({
+  loginAdmin: mocks.loginAdmin,
+}));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace: mocks.replace, refresh: mocks.refresh }),
+}));
 
 describe("LoginForm", () => {
-  beforeEach(() => sendAdminLoginLink.mockReset());
-
-  it("shows a cooldown after a successful send instead of a fake resend button", async () => {
-    sendAdminLoginLink.mockResolvedValue({ ok: true });
-    const user = userEvent.setup();
-    render(<LoginForm notAllowed={false} />);
-
-    await user.type(
-      screen.getByRole("textbox", { name: "Correo" }),
-      "admin@example.com",
-    );
-    await user.click(
-      screen.getByRole("button", { name: "Enviarme el enlace" }),
-    );
-
-    expect(await screen.findByText("Revisá tu correo")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Podés reenviar en 60 s" }),
-    ).toBeDisabled();
-    expect(sendAdminLoginLink).toHaveBeenCalledOnce();
+  beforeEach(() => {
+    for (const mock of Object.values(mocks)) mock.mockReset();
   });
 
-  it("shows the real delivery error and keeps the form available", async () => {
-    sendAdminLoginLink.mockResolvedValue({
-      ok: false,
-      error: "No pudimos enviar el enlace.",
-    });
+  it("submits email and password and enters the protected panel", async () => {
+    mocks.loginAdmin.mockResolvedValue({ ok: true });
     const user = userEvent.setup();
-    render(<LoginForm notAllowed={false} />);
+    render(<LoginForm notAllowed={false} resetDone={false} />);
 
     await user.type(
       screen.getByRole("textbox", { name: "Correo" }),
       "admin@example.com",
     );
-    await user.click(
-      screen.getByRole("button", { name: "Enviarme el enlace" }),
+    await user.type(screen.getByLabelText("Contraseña"), "Secret1234!abcd");
+    await user.click(screen.getByRole("button", { name: "Ingresar" }));
+
+    expect(mocks.loginAdmin).toHaveBeenCalledWith(
+      "admin@example.com",
+      "Secret1234!abcd",
     );
+    expect(mocks.replace).toHaveBeenCalledWith("/admin/hoy");
+    expect(mocks.refresh).toHaveBeenCalledOnce();
+  });
+
+  it("shows a generic failure and clears only the password", async () => {
+    mocks.loginAdmin.mockResolvedValue({
+      ok: false,
+      error: "Correo o contraseña incorrectos.",
+    });
+    const user = userEvent.setup();
+    render(<LoginForm notAllowed={false} resetDone={false} />);
+
+    const email = screen.getByRole("textbox", { name: "Correo" });
+    const password = screen.getByLabelText("Contraseña");
+    await user.type(email, "admin@example.com");
+    await user.type(password, "Wrong1234!abcd");
+    await user.click(screen.getByRole("button", { name: "Ingresar" }));
 
     expect(
-      await screen.findByText("No pudimos enviar el enlace."),
+      await screen.findByText("Correo o contraseña incorrectos."),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Enviarme el enlace" }),
-    ).toBeEnabled();
+    expect(email).toHaveValue("admin@example.com");
+    expect(password).toHaveValue("");
   });
 });

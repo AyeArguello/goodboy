@@ -13,7 +13,7 @@ import {
  * pending verification -> (admin confirms) -> confirmed.
  *
  * The admin steps and the "email" are done directly against the database
- * (magic-link login and real email delivery can't be automated): the test
+ * (production password login and real email delivery aren't exercised): the test
  * issues the upload link exactly like the app does when it sends the email.
  * Needs a reachable Supabase (the local Docker stack in CI); it skips itself
  * when there isn't one so `pnpm test:e2e` still runs anywhere.

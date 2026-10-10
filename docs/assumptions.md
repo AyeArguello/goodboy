@@ -259,10 +259,10 @@ decisión legal/fiscal del negocio:
   SHA256 (`lib/security/rateLimitKey.ts`, secreto rotable en `RATE_LIMIT_HMAC_SECRET`). También se revocó
   `EXECUTE` de `PUBLIC` sobre `enforce_rate_limit` (quedó abierto por descuido en la migración pública
   original, a diferencia de las funciones admin que sí lo revocaban).
-- **Login admin con allowlist previa:** antes cualquier correo podía disparar un magic link (Supabase recién
-  lo rechazaba en el callback, después de crear el usuario de Auth). Ahora `app/admin/login/actions.ts`
-  revisa la allowlist _antes_ de llamar a Supabase Auth, con una respuesta genérica idéntica se permita o no
-  el correo (para no poder usarse para enumerar admins) y un throttle liviano vía `enforce_rate_limit`.
+- **Login admin cerrado con contraseña:** `app/admin/login/actions.ts` revisa la allowlist antes de llamar a
+  Supabase Auth, aplica un throttle privado por IP anonimizada y devuelve un error uniforme ante credenciales
+  inválidas. El alta pública está desactivada; la autorización real sigue en `admin_profiles` + RLS. La
+  recuperación requiere email autorizado, un enlace de Supabase y una cookie HTTP-only de 10 minutos.
 - **Cabeceras de seguridad:** CSP, HSTS, `X-Content-Type-Options`, `Referrer-Policy` y `Permissions-Policy`
   agregadas en `next.config.ts` (no había ninguna). La CSP es una base razonable con `'unsafe-inline'` en
   script/style — no una CSP estricta con nonces.

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
 import { businessConfig } from "@/lib/config/business";
+import { signOutAdmin } from "@/app/admin/logout/actions";
 
 const TABS = [
   {
@@ -99,6 +100,14 @@ export function AdminShell({
         >
           Mantenimiento
         </Link>
+        <form action={signOutAdmin}>
+          <button
+            type="submit"
+            className="font-heading text-ink-soft min-h-11 w-full rounded-lg px-3.5 text-left text-sm font-semibold"
+          >
+            Cerrar sesión
+          </button>
+        </form>
       </nav>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -108,7 +117,7 @@ export function AdminShell({
 
         <nav
           aria-label="Panel"
-          className="border-lavender-100 sticky bottom-0 grid grid-cols-4 border-t bg-white px-1 pt-1.5 pb-2.5 lg:hidden"
+          className="border-lavender-100 sticky bottom-0 grid grid-cols-5 border-t bg-white px-1 pt-1.5 pb-2.5 lg:hidden"
         >
           {TABS.map((t) => {
             const active = isActive(t.href);
@@ -149,6 +158,29 @@ export function AdminShell({
               </Link>
             );
           })}
+          <form action={signOutAdmin} className="contents">
+            <button
+              type="submit"
+              className="font-heading text-ink-soft flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-semibold"
+            >
+              <span className="flex h-7.5 w-14 items-center justify-center rounded-full">
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M10 5H5v14h5M14 8l4 4-4 4M18 12H9" />
+                </svg>
+              </span>
+              Salir
+            </button>
+          </form>
         </nav>
       </div>
     </div>
