@@ -53,4 +53,14 @@ describe("requestAdminPasswordRecovery", () => {
       { redirectTo: "https://goodboy.com.ar/admin/auth/reset" },
     );
   });
+
+  it("treats Supabase email throttling as a neutral success", async () => {
+    mocks.resetPasswordForEmail.mockResolvedValue({
+      error: { code: "over_email_send_rate_limit", status: 429 },
+    });
+
+    await expect(
+      requestAdminPasswordRecovery("admin@example.com"),
+    ).resolves.toEqual({ ok: true });
+  });
 });

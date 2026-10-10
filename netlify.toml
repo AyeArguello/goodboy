@@ -4,10 +4,25 @@
 # Netlify's automatic Next.js adapter. The explicit `.next` publish directory
 # prevents Netlify from falling back to the repository root before the adapter
 # rewrites the deploy configuration. There is deliberately no pinned
-# @netlify/plugin-nextjs entry and no [[redirects]] here.
+# @netlify/plugin-nextjs entry.
 [build]
   command = "pnpm build"
   publish = ".next"
 
 [build.environment]
   NODE_VERSION = "22"
+
+# Keep production on the custom domain even when somebody opens Netlify's
+# permanent site subdomain or the main-branch deploy alias. Deploy Preview
+# URLs remain available for isolated smoke tests.
+[[redirects]]
+  from = "https://clinquant-pithivier-afc538.netlify.app/*"
+  to = "https://goodboy.com.ar/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "https://main--clinquant-pithivier-afc538.netlify.app/*"
+  to = "https://goodboy.com.ar/:splat"
+  status = 301
+  force = true

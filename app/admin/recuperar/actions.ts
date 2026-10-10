@@ -44,6 +44,12 @@ export async function requestAdminPasswordRecovery(
   });
 
   if (error) {
+    // Supabase throttles repeated recovery emails. A recent request may have
+    // succeeded already, so keep the same neutral response used for unknown
+    // addresses instead of showing a misleading delivery failure or leaking
+    // whether this email belongs to an account.
+    if (error.status === 429) return { ok: true };
+
     console.error("Admin password-recovery delivery failed", {
       code: error.code,
       status: error.status,
