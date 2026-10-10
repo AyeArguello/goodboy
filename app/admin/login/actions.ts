@@ -12,6 +12,28 @@ const INVALID_CREDENTIALS = "Correo o contraseña incorrectos.";
 const TEMPORARY_ERROR =
   "No pudimos iniciar sesión. Esperá unos minutos y volvé a intentarlo.";
 
+function safeErrorDiagnostic(error: unknown): {
+  code?: string;
+  message: string;
+  hint?: string;
+} {
+  if (error instanceof Error) {
+    return { message: error.message };
+  }
+  if (typeof error === "object" && error !== null) {
+    const candidate = error as Record<string, unknown>;
+    return {
+      code: typeof candidate.code === "string" ? candidate.code : undefined,
+      message:
+        typeof candidate.message === "string"
+          ? candidate.message
+          : "unknown_error",
+      hint: typeof candidate.hint === "string" ? candidate.hint : undefined,
+    };
+  }
+  return { message: "unknown_error" };
+}
+
 /**
  * Password login for the single-owner admin panel.
  *
@@ -51,9 +73,10 @@ export async function loginAdmin(
     // Password endpoints fail closed when the private limiter is unavailable.
     // Supabase also has provider-side Auth limits, but this guard must not be
     // silently skipped on a brute-force-sensitive endpoint.
-    console.error("Admin password-login pre-limit unavailable", {
-      message: error instanceof Error ? error.message : "unknown_error",
-    });
+    console.error(
+      "Admin password-login pre-limit unavailable",
+      safeErrorDiagnostic(error),
+    );
     return { ok: false, error: TEMPORARY_ERROR };
   }
 

@@ -58,8 +58,17 @@ describe("loginAdmin", () => {
   });
 
   it("fails closed when the private brute-force limiter is unavailable", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => undefined);
-    mocks.rpc.mockResolvedValue({ error: new Error("invalid api key") });
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    mocks.rpc.mockResolvedValue({
+      error: {
+        code: "PGRST301",
+        message: "invalid api key",
+        hint: "check server credentials",
+        details: "must not be logged",
+      },
+    });
 
     await expect(
       loginAdmin("admin@example.com", "Secret1234!abcd"),
@@ -68,6 +77,14 @@ describe("loginAdmin", () => {
       error:
         "No pudimos iniciar sesión. Esperá unos minutos y volvé a intentarlo.",
     });
+    expect(consoleError).toHaveBeenCalledWith(
+      "Admin password-login pre-limit unavailable",
+      {
+        code: "PGRST301",
+        message: "invalid api key",
+        hint: "check server credentials",
+      },
+    );
     expect(mocks.signInWithPassword).not.toHaveBeenCalled();
   });
 
