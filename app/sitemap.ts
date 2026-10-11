@@ -10,5 +10,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: base, changeFrequency: "weekly", priority: 1 },
     { url: `${base}/turnos`, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${base}/galeria`, changeFrequency: "weekly", priority: 0.6 },
   ];
 }
