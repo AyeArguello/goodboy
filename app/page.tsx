@@ -11,6 +11,10 @@ import { Faq } from "@/components/landing/Faq";
 import { Contact } from "@/components/landing/Contact";
 import { FinalCta } from "@/components/landing/FinalCta";
 import { Footer } from "@/components/landing/Footer";
+import { ReadyToBook } from "@/components/landing/ReadyToBook";
+import { IntroLoader } from "@/components/landing/IntroLoader";
+import { MotionProvider } from "@/components/motion/MotionProvider";
+import { Reveal } from "@/components/motion/Reveal";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { getUpcomingAvailability } from "@/lib/data/availability";
 import { faqPageJsonLd, localBusinessJsonLd } from "@/lib/seo/jsonld";
@@ -25,24 +29,34 @@ export default async function HomePage() {
   const nextSlot = days[0];
 
   return (
-    <>
+    <MotionProvider>
       <JsonLd data={localBusinessJsonLd()} />
       <JsonLd data={faqPageJsonLd()} />
+      <IntroLoader />
       <Header />
       <main>
-        <Hero nextSlot={nextSlot} />
+        <Hero />
         <TrustStrip />
-        <Services />
         <HowItWorks />
+        <Services />
         <Pricing />
+        <ReadyToBook nextSlot={nextSlot} />
         <Gallery />
-        <Transport />
-        <TurnosPreview days={days} />
-        <Faq />
-        <Contact />
+        <Reveal>
+          <Transport />
+        </Reveal>
+        <Reveal>
+          <TurnosPreview days={days} />
+        </Reveal>
+        <Reveal>
+          <Faq />
+        </Reveal>
+        <Reveal>
+          <Contact />
+        </Reveal>
         <FinalCta />
       </main>
       <Footer />
-    </>
+    </MotionProvider>
   );
 }
