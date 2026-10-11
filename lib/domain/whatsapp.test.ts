@@ -39,31 +39,52 @@ describe("adminWhatsAppTemplates", () => {
     expect(msg).toContain("tu barrio");
   });
 
-  it("includes the deposit amount and deadline in the approval template", () => {
-    const msg = adminWhatsAppTemplates.approveWithDepositInstructions({
-      ownerName: "Carolina",
-      dogName: "Luna",
-      when: "viernes 25 sep · 9:00",
-      amountArs: 20000,
-      dueHours: 24,
-    });
+  it("fills in the transport amount when it is known", () => {
+    expect(
+      adminWhatsAppTemplates.confirmTransportCost({
+        neighborhood: "Jardín",
+        amount: "ARS 5.000–8.000",
+      }),
+    ).toBe("El traslado desde Jardín es de ARS 5.000–8.000, ida y vuelta.");
+  });
+
+  const approval = {
+    ownerName: "Carolina",
+    dogName: "Luna",
+    when: "viernes 25 sep · 9:00",
+    amountArs: 20000,
+    dueLabel: "sábado 26 sep · 9:00",
+    transfer: {
+      alias: "good.boy.alias",
+      holder: "Titular Prueba",
+      cbu: "0000003100000000000001",
+    },
+  };
+
+  it("asks for the deposit with the amount, the deadline and the transfer details", () => {
+    const msg = adminWhatsAppTemplates.approveWithDepositInstructions(approval);
     expect(msg).toContain("Carolina");
     expect(msg).toContain("Luna");
     expect(msg).toContain("20.000");
-    expect(msg).toContain("24 h");
+    expect(msg).toContain("sábado 26 sep · 9:00");
+    expect(msg).toContain("Alias: good.boy.alias");
+    expect(msg).toContain("Titular: Titular Prueba");
+    expect(msg).toContain("CBU/CVU: 0000003100000000000001");
   });
 
-  it("approval template points to the email, not to Mercado Pago or card payments", () => {
-    const msg = adminWhatsAppTemplates.approveWithDepositInstructions({
-      ownerName: "Carolina",
-      dogName: "Luna",
-      when: "viernes 25 sep · 9:00",
-      amountArs: 20000,
-      dueHours: 24,
-    });
+  it("asks for the receipt in the same chat, with no card or Mercado Pago", () => {
+    const msg = adminWhatsAppTemplates.approveWithDepositInstructions(approval);
     expect(msg).toContain("transferencia");
-    expect(msg).toContain("email");
-    expect(msg).not.toMatch(/mercado ?pago|tarjeta|recargo/i);
+    expect(msg).toContain("comprobante por este chat");
+    expect(msg).not.toMatch(/mercado ?pago|tarjeta|recargo|email/i);
+  });
+
+  it("leaves a visible gap when no transfer details are configured", () => {
+    const msg = adminWhatsAppTemplates.approveWithDepositInstructions({
+      ...approval,
+      transfer: { alias: null, holder: null, cbu: null },
+    });
+    expect(msg).toContain("[completar]");
   });
 });
 

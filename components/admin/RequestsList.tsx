@@ -25,13 +25,11 @@ const FILTERS: { key: RequestsFilter; label: string }[] = [
 export function RequestsList({
   appointments,
   filter,
-  pendingCount,
-  receiptsCount,
+  counts,
 }: {
   appointments: AppointmentRow[];
   filter: RequestsFilter;
-  pendingCount: number;
-  receiptsCount: number;
+  counts: Record<RequestsFilter, number>;
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -73,9 +71,7 @@ export function RequestsList({
                 : "text-charcoal bg-white"
             }`}
           >
-            {f.label}
-            {f.key === "pending_review" ? ` (${pendingCount})` : ""}
-            {f.key === "receipts" ? ` (${receiptsCount})` : ""}
+            {f.label} ({counts[f.key]})
           </Link>
         ))}
       </div>

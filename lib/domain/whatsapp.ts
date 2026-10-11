@@ -70,17 +70,34 @@ export const adminWhatsAppTemplates = {
     dogName: string;
     when: string;
     amountArs: number;
-    dueHours: number;
-  }) =>
-    `Hola ${input.ownerName}, tu turno para ${input.dogName} el ${input.when} fue aprobado. ` +
-    `Para confirmarlo necesitamos una seña de ARS ${input.amountArs.toLocaleString("es-AR")} por transferencia (se descuenta del total), ` +
-    `dentro de las próximas ${input.dueHours} h. Te mandamos los datos y el enlace para subir el comprobante por email; revisá también el correo no deseado.`,
+    /** Deadline for the deposit, e.g. "miércoles, 14 de octubre · 12:00". */
+    dueLabel: string;
+    transfer: {
+      alias: string | null;
+      holder: string | null;
+      cbu: string | null;
+    };
+  }) => {
+    const transferLines = [
+      input.transfer.alias && `Alias: ${input.transfer.alias}`,
+      input.transfer.holder && `Titular: ${input.transfer.holder}`,
+      input.transfer.cbu && `CBU/CVU: ${input.transfer.cbu}`,
+    ].filter((line): line is string => Boolean(line));
+    return [
+      `Hola ${input.ownerName}, aprobamos el turno de ${input.dogName}: ${input.when}.`,
+      `Para confirmarlo necesitamos una seña de ARS ${input.amountArs.toLocaleString("es-AR")} por transferencia (se descuenta del total), hasta el ${input.dueLabel}.`,
+      transferLines.length > 0
+        ? ["Datos para transferir:", ...transferLines].join("\n")
+        : "Datos para transferir: [completar]",
+      "Cuando transfieras, mandanos el comprobante por este chat y te confirmamos el turno.",
+    ].join("\n\n");
+  },
   askForPhoto: (input: { ownerName: string; dogName: string }) =>
     `Hola ${input.ownerName}, ¿me mandás una foto reciente de ${input.dogName}?`,
   proposeNewTime: (input: { ownerName: string }) =>
     `Hola ${input.ownerName}, ese horario no me queda. ¿Te sirve [día y hora]?`,
-  confirmTransportCost: (input: { neighborhood: string }) =>
-    `El traslado desde ${input.neighborhood || "tu barrio"} es de ARS [monto], ida y vuelta.`,
+  confirmTransportCost: (input: { neighborhood: string; amount?: string }) =>
+    `El traslado desde ${input.neighborhood || "tu barrio"} es de ${input.amount ?? "ARS [monto]"}, ida y vuelta.`,
   depositForfeited: (input: { ownerName: string; dogName: string }) =>
     `Hola ${input.ownerName}, como el turno de ${input.dogName} se canceló sin una reprogramación válida dentro del mismo mes, la seña no se reintegra. Cualquier duda, escribinos.`,
 };

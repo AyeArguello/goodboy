@@ -25,7 +25,27 @@ const TABS = [
     icon: "M5 4h14v16H5zM8.5 9h7M8.5 13h7M8.5 17h4",
   },
   { href: "/admin/horarios", label: "Horarios", icon: "M12 5v14M5 12h14" },
+  {
+    href: "/admin/historial",
+    label: "Historial",
+    icon: "M3.5 12a8.5 8.5 0 1 0 2.6-6.1M3.5 4.5v4h4M12 7.5V12l3 2",
+  },
+  {
+    href: "/admin/galeria",
+    label: "Galería",
+    icon: "M4 5h16v14H4zM4 15l4.5-4.5 3.5 3.5 3-3L20 16M9 9.5a.5.5 0 1 0 0-.01",
+  },
 ] as const;
+
+/** On a phone the bar has room for four sections plus "Más" (the rest + sign out). */
+const MOBILE_TABS = TABS.slice(0, 4);
+const MORE_ICON = "M5 12h.01M12 12h.01M19 12h.01";
+const MORE_PATHS = [
+  "/admin/mas",
+  "/admin/historial",
+  "/admin/galeria",
+  "/admin/mantenimiento",
+];
 
 export function AdminShell({
   pendingCount,
@@ -41,7 +61,9 @@ export function AdminShell({
   const isActive = (href: string) =>
     pathname === href ||
     (href === "/admin/solicitudes" &&
-      pathname.startsWith("/admin/solicitudes"));
+      pathname.startsWith("/admin/solicitudes")) ||
+    (href === "/admin/horarios" && pathname.startsWith("/admin/turnos"));
+  const moreActive = MORE_PATHS.includes(pathname);
 
   return (
     <div className="flex min-h-screen">
@@ -119,7 +141,7 @@ export function AdminShell({
           aria-label="Panel"
           className="border-lavender-100 sticky bottom-0 grid grid-cols-5 border-t bg-white px-1 pt-1.5 pb-2.5 lg:hidden"
         >
-          {TABS.map((t) => {
+          {MOBILE_TABS.map((t) => {
             const active = isActive(t.href);
             return (
               <Link
@@ -158,29 +180,29 @@ export function AdminShell({
               </Link>
             );
           })}
-          <form action={signOutAdmin} className="contents">
-            <button
-              type="submit"
-              className="font-heading text-ink-soft flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-semibold"
+          <Link
+            href="/admin/mas"
+            aria-current={moreActive ? "page" : undefined}
+            className={`font-heading flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-semibold no-underline ${moreActive ? "text-charcoal" : "text-ink-soft"}`}
+          >
+            <span
+              className={`flex h-7.5 w-14 items-center justify-center rounded-full ${moreActive ? "bg-lavender" : ""}`}
             >
-              <span className="flex h-7.5 w-14 items-center justify-center rounded-full">
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M10 5H5v14h5M14 8l4 4-4 4M18 12H9" />
-                </svg>
-              </span>
-              Salir
-            </button>
-          </form>
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#25282C"
+                strokeWidth="2.6"
+                strokeLinecap="round"
+                aria-hidden="true"
+              >
+                <path d={MORE_ICON} />
+              </svg>
+            </span>
+            Más
+          </Link>
         </nav>
       </div>
     </div>

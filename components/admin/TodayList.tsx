@@ -89,7 +89,7 @@ export function TodayList({
                   {SIZE_LABELS[a.sizeBucket]} · {a.breed || "raza sin dato"} ·{" "}
                   {SERVICE_PACKAGE_LABELS[a.servicePackage]}
                   {a.coatState
-                    ? ` · manto ${COAT_LABELS[a.coatState].toLowerCase()}`
+                    ? ` · pelo ${COAT_LABELS[a.coatState].toLowerCase()}`
                     : ""}
                 </span>
                 <span className="flex items-center gap-1.5 text-[15px]">

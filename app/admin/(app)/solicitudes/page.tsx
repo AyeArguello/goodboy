@@ -1,7 +1,6 @@
 import { RequestsList } from "@/components/admin/RequestsList";
 import {
-  getPendingCount,
-  getPendingReceiptsCount,
+  getRequestCounts,
   getRequestsList,
   type RequestsFilter,
 } from "@/lib/data/admin";
@@ -26,10 +25,9 @@ export default async function SolicitudesPage({
     ? (rawFilter as RequestsFilter)
     : "pending_review";
 
-  const [appointments, pendingCount, receiptsCount] = await Promise.all([
+  const [appointments, counts] = await Promise.all([
     getRequestsList(filter),
-    getPendingCount(),
-    getPendingReceiptsCount(),
+    getRequestCounts(),
   ]);
 
   return (
@@ -37,15 +35,14 @@ export default async function SolicitudesPage({
       <div className="flex flex-col gap-0.5">
         <h1 className="font-heading m-0 text-xl font-bold">Solicitudes</h1>
         <span className="text-ink-soft text-sm">
-          {pendingCount} por revisar · {receiptsCount} comprobantes por
-          verificar
+          {counts.pending_review} por revisar · {counts.receipts} comprobantes
+          por verificar
         </span>
       </div>
       <RequestsList
         appointments={appointments}
         filter={filter}
-        pendingCount={pendingCount}
-        receiptsCount={receiptsCount}
+        counts={counts}
       />
     </div>
   );

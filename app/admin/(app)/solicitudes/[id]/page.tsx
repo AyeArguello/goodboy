@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { getServerEnv } from "@/lib/env/server";
 import { AppointmentDetail } from "@/components/admin/AppointmentDetail";
 import {
   getAppointmentById,
@@ -20,8 +21,17 @@ export default async function AppointmentDetailPage({
     getAppointmentEmails(id),
   ]);
 
+  // Only the signed-in admin reaches this page; the data goes into the WhatsApp
+  // message that asks the customer for the deposit.
+  const env = getServerEnv();
+
   return (
     <AppointmentDetail
+      transfer={{
+        alias: env.DEPOSIT_TRANSFER_ALIAS ?? null,
+        holder: env.DEPOSIT_TRANSFER_HOLDER ?? null,
+        cbu: env.DEPOSIT_TRANSFER_CBU ?? null,
+      }}
       appointment={appointment}
       events={events}
       emails={emails}

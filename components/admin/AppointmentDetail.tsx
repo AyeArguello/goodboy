@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
+import { CtaLink } from "@/components/ui/Link";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { TextAreaField, TextField } from "@/components/ui/Field";
 import {
@@ -15,6 +16,8 @@ import {
   type PaymentMethod,
 } from "@/lib/domain/appointment";
 import { businessConfig } from "@/lib/config/business";
+import { googleMapsSearchUrl } from "@/lib/domain/maps";
+import { quoteTransport } from "@/lib/domain/transport";
 import { formatDayLabel, formatTimeLabel } from "@/lib/domain/datetime";
 import {
   adminWhatsAppTemplates,
@@ -41,11 +44,32 @@ import {
 /** Manual entry without a receipt (cash at the shop, etc.). Card/Mercado Pago payments do not exist in this flow. */
 const PAYMENT_METHODS: PaymentMethod[] = ["cash", "bank_transfer"];
 
+function PinIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z" />
+      <circle cx="12" cy="9.5" r="2.5" />
+    </svg>
+  );
+}
+
 export function AppointmentDetail({
   appointment,
   events,
   emails,
+  transfer,
 }: {
+  transfer: { alias: string | null; holder: string | null; cbu: string | null };
   appointment: AppointmentRow;
   events: EventRow[];
   emails: EmailLogRow[];
@@ -71,6 +95,10 @@ export function AppointmentDetail({
   // inline) — fine here since this only drives a display-only heuristic.
   const [now] = useState(() => new Date());
 
+  const transportQuote =
+    appointment.logisticsMode === "pickup" && appointment.neighborhood
+      ? quoteTransport(appointment.neighborhood)
+      : null;
   const startsAt = new Date(appointment.startsAt);
   const when = `${formatDayLabel(startsAt)} · ${formatTimeLabel(startsAt)}`;
   const depositDueAt = appointment.depositDueAt
@@ -156,7 +184,10 @@ export function AppointmentDetail({
         dogName: appointment.dogName,
         when,
         amountArs: businessConfig.deposit.amountArs,
-        dueHours: businessConfig.deposit.dueHours,
+        dueLabel: depositDueAt
+          ? `${formatDayLabel(depositDueAt)} · ${formatTimeLabel(depositDueAt)}`
+          : `dentro de las próximas ${businessConfig.deposit.dueHours} h`,
+        transfer,
       }),
     },
     {
@@ -176,6 +207,7 @@ export function AppointmentDetail({
       label: "Confirmar costo de traslado",
       text: adminWhatsAppTemplates.confirmTransportCost({
         neighborhood: appointment.neighborhood ?? "",
+        amount: transportQuote?.amount,
       }),
     },
     {
@@ -207,7 +239,7 @@ export function AppointmentDetail({
             </dd>
             <dt className="text-ink-soft">Raza</dt>
             <dd className="m-0">{appointment.breed || "—"}</dd>
-            <dt className="text-ink-soft">Manto</dt>
+            <dt className="text-ink-soft">Pelo</dt>
             <dd className="m-0">
               {appointment.coatState ? COAT_LABELS[appointment.coatState] : "—"}
             </dd>
@@ -218,9 +250,36 @@ export function AppointmentDetail({
             <dt className="text-ink-soft">Llegada</dt>
             <dd className="m-0">
               {appointment.logisticsMode === "pickup"
-                ? `Traslado desde ${appointment.neighborhood} · costo a confirmar`
+                ? `Traslado desde ${appointment.neighborhood} · ${transportQuote ? transportQuote.amount : "costo a confirmar"}`
                 : "Lo trae"}
             </dd>
+            {appointment.logisticsMode === "pickup" ? (
+              <>
+                <dt className="text-ink-soft">Dirección</dt>
+                <dd className="m-0">
+                  {appointment.pickupAddress ? (
+                    <a
+                      href={googleMapsSearchUrl(
+                        appointment.pickupAddress,
+                        appointment.neighborhood,
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-11 items-center gap-1.5 font-semibold underline"
+                    >
+                      <PinIcon />
+                      {appointment.pickupAddress}
+                      {appointment.neighborhood
+                        ? `, ${appointment.neighborhood}`
+                        : ""}
+                      <span className="sr-only"> (abre Google Maps)</span>
+                    </a>
+                  ) : (
+                    "—"
+                  )}
+                </dd>
+              </>
+            ) : null}
             <dt className="text-ink-soft">Código</dt>
             <dd className="m-0">{appointment.code}</dd>
             {appointment.status === "awaiting_deposit" && depositDueAt ? (
@@ -256,10 +315,38 @@ export function AppointmentDetail({
 
         <section className="border-lavender-100 flex flex-col gap-1.5 rounded-xl border bg-white p-4.5">
           <h3 className="font-heading m-0 text-base font-bold">Responsable</h3>
-          <span className="text-base">
-            {appointment.ownerName} · +54{" "}
-            {appointment.phoneE164.replace(/^\+549/, "")}
-          </span>
+          <dl className="m-0 grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-1 text-base">
+            <dt className="text-ink-soft">Nombre</dt>
+            <dd className="m-0">{appointment.ownerName}</dd>
+            <dt className="text-ink-soft">WhatsApp</dt>
+            <dd className="m-0 flex flex-wrap items-center gap-x-3">
+              <span>+54 {appointment.phoneE164.replace(/^\+549/, "")}</span>
+              <a
+                href={buildWhatsAppLink(appointment.phoneE164, "")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 items-center font-semibold underline"
+              >
+                Abrir chat
+              </a>
+              <a
+                href={`tel:${appointment.phoneE164}`}
+                className="inline-flex min-h-11 items-center font-semibold underline"
+              >
+                Llamar
+              </a>
+            </dd>
+            <dt className="text-ink-soft">Correo</dt>
+            <dd className="m-0 break-all">
+              {appointment.email ? (
+                <a href={`mailto:${appointment.email}`} className="underline">
+                  {appointment.email}
+                </a>
+              ) : (
+                "No dejó correo"
+              )}
+            </dd>
+          </dl>
         </section>
 
         <section className="border-lavender-100 flex flex-col gap-2 rounded-xl border bg-white p-4.5">
@@ -326,7 +413,7 @@ export function AppointmentDetail({
                 onClick={() =>
                   run(
                     () => approveRequest(appointment.id),
-                    "Solicitud aprobada: le mandamos los datos para la seña.",
+                    "Solicitud aprobada. Ahora mandale los datos de la seña por WhatsApp con el botón de abajo.",
                   )
                 }
                 loading={isPending}
@@ -374,6 +461,36 @@ export function AppointmentDetail({
           ) : null}
 
           {appointment.status === "awaiting_deposit" ? (
+            <section className="border-purple bg-lavender-100 flex flex-col gap-2.5 rounded-lg border-[1.5px] p-3.5">
+              <h4 className="font-heading m-0 text-base font-bold">
+                Pedir la seña por WhatsApp
+              </h4>
+              <p className="m-0 text-sm">
+                Abre el chat con el mensaje listo (monto, plazo y datos para
+                transferir). Lo revisás y lo enviás vos. Cuando te llegue el
+                comprobante por ahí, registrá la seña abajo.
+              </p>
+              <CtaLink
+                href={buildWhatsAppLink(
+                  appointment.phoneE164,
+                  waMessages[0]!.text,
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                size="md"
+              >
+                Enviar datos por WhatsApp
+              </CtaLink>
+              {!transfer.alias && !transfer.cbu ? (
+                <p role="alert" className="text-error m-0 text-sm font-bold">
+                  Faltan cargar los datos de transferencia del negocio: el
+                  mensaje queda con &quot;[completar]&quot;.
+                </p>
+              ) : null}
+            </section>
+          ) : null}
+
+          {appointment.status === "awaiting_deposit" ? (
             hasPendingReceipt ? (
               <p className="text-ink-soft m-0 text-sm">
                 Hay un comprobante pendiente: confirmalo o rechazalo desde
@@ -382,7 +499,8 @@ export function AppointmentDetail({
             ) : (
               <details className="border-warning-line bg-warning-bg rounded-lg border-[1.5px] p-3.5">
                 <summary className="font-heading min-h-11 cursor-pointer text-sm font-bold">
-                  Registrar seña sin comprobante (efectivo u otro medio)
+                  Registrar seña recibida (comprobante por WhatsApp, efectivo u
+                  otro medio)
                 </summary>
                 <div className="mt-2.5 flex flex-col gap-2.5">
                   <TextField
