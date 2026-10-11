@@ -1,4 +1,5 @@
 import { howItWorksSteps } from "@/lib/content/landing";
+import { Reveal } from "@/components/motion/Reveal";
 
 export function HowItWorks() {
   return (
@@ -13,15 +14,17 @@ export function HowItWorks() {
           </h2>
         </div>
         <ol className="m-0 grid list-none grid-cols-1 gap-8 p-0 sm:grid-cols-2 lg:grid-cols-3">
-          {howItWorksSteps.map((s) => (
-            <li key={s.n} className="flex flex-col gap-3">
-              <span className="bg-lavender font-heading text-charcoal flex size-14 items-center justify-center rounded-full text-xl font-bold">
-                {s.n}
-              </span>
-              <strong className="font-heading text-[19px] leading-snug font-bold">
-                {s.title}
-              </strong>
-              <span className="text-ink-soft text-pretty">{s.text}</span>
+          {howItWorksSteps.map((s, index) => (
+            <li key={s.n}>
+              <Reveal delay={index * 0.08} className="flex flex-col gap-3">
+                <span className="bg-lavender font-heading text-charcoal flex size-14 items-center justify-center rounded-full text-xl font-bold">
+                  {s.n}
+                </span>
+                <strong className="font-heading text-[19px] leading-snug font-bold">
+                  {s.title}
+                </strong>
+                <span className="text-ink-soft text-pretty">{s.text}</span>
+              </Reveal>
             </li>
           ))}
         </ol>

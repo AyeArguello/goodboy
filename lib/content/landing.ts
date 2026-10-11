@@ -13,8 +13,8 @@ import { formatDurationHM } from "@/lib/domain/datetime";
  */
 
 export const nav = [
-  { label: "Servicios", href: "#servicios" },
   { label: "Cómo funciona", href: "#como-funciona" },
+  { label: "Servicios", href: "#servicios" },
   { label: "Precios", href: "#precios" },
   { label: "Galería", href: "#galeria" },
   { label: "Traslado", href: "#traslado" },
@@ -41,7 +41,7 @@ export const trustItems = [
   {
     icon: "M3.5 12.5l8-8H20v8.5l-8 8zM15.5 8.5a.5.5 0 1 0 0-.01",
     title: "Precio final tras evaluación",
-    text: "Según tamaño y manto",
+    text: "Según tamaño y pelo",
   },
 ] as const;
 
@@ -61,17 +61,17 @@ export const howItWorksSteps = [
   {
     n: "1",
     title: "Elegís un horario",
-    text: `Mirás los horarios publicados y elegís el que te sirva, con ${businessConfig.rules.minLeadHours} h de anticipación o más.`,
+    text: `Mirás los horarios disponibles y elegís el que te sirva, con ${businessConfig.rules.minLeadHours} h de anticipación o más.`,
   },
   {
     n: "2",
     title: "Nos contás de tu perro",
-    text: "Tamaño, raza o cruza, estado del manto y qué servicio necesita. Si querés traslado, tu barrio.",
+    text: "Tamaño, raza o cruza, estado del pelo y qué servicio necesita. Si querés traslado, tu barrio.",
   },
   {
     n: "3",
     title: "Te aprobamos y pedimos la seña",
-    text: `Si la dueña aprueba tu solicitud, te mandamos por email los datos para transferir la seña de ARS ${businessConfig.deposit.amountArs.toLocaleString("es-AR")} (se descuenta del total) y un enlace seguro para subir el comprobante.`,
+    text: `Si la peluquera aprueba tu solicitud, te mandamos por email los datos para transferir la seña de ARS ${businessConfig.deposit.amountArs.toLocaleString("es-AR")} (se descuenta del total) y un enlace seguro para subir el comprobante.`,
   },
   {
     n: "4",
@@ -109,17 +109,17 @@ export function faqs(): { question: string; answer: string }[] {
     {
       question: "¿Cuándo queda confirmado mi turno?",
       answer:
-        "Primero la dueña revisa y aprueba tu solicitud. Después te pedimos una seña de ARS " +
+        "Primero la peluquera revisa y aprueba tu solicitud. Después te pedimos una seña de ARS " +
         `${businessConfig.deposit.amountArs.toLocaleString("es-AR")} (se descuenta del total) — el turno queda confirmado recién cuando la registramos.`,
     },
     {
       question: "¿Cuánto dura el turno?",
-      answer: `Aproximadamente entre ${formatDurationHM(businessConfig.rules.serviceDurationMinMinutes)} y ${formatDurationHM(businessConfig.rules.serviceDurationMaxMinutes)}, según el tamaño, el manto y el trabajo necesario.`,
+      answer: `Aproximadamente entre ${formatDurationHM(businessConfig.rules.serviceDurationMinMinutes)} y ${formatDurationHM(businessConfig.rules.serviceDurationMaxMinutes)}, según el tamaño, el pelo y el trabajo necesario.`,
     },
     {
       question: "¿Por qué el precio es orientativo?",
       answer:
-        "Porque el precio final depende del tamaño real, el estado del manto y el trabajo que necesite tu perro. Se confirma al recibirlo y evaluarlo.",
+        "Porque el precio final depende del tamaño real, el estado del pelo y el trabajo que necesite tu perro. Se confirma al recibirlo y evaluarlo.",
     },
     {
       question: "¿Cuánto cuesta el traslado?",
@@ -128,7 +128,7 @@ export function faqs(): { question: string; answer: string }[] {
     {
       question: "¿Tengo que pagar la seña al pedir el turno?",
       answer:
-        "No. Se paga recién si la dueña aprueba tu solicitud, y se descuenta del total del servicio.",
+        "No. Se paga recién si la peluquera aprueba tu solicitud, y se descuenta del total del servicio.",
     },
     {
       question: "¿Cómo se paga la seña?",
@@ -141,95 +141,3 @@ export function faqs(): { question: string; answer: string }[] {
     },
   ];
 }
-
-export interface GalleryItem {
-  id: string;
-  /** Path under public/, once a real photo is assigned. Absent = placeholder slot. */
-  src?: string;
-  caption: string;
-}
-
-/**
- * Static gallery manifest (per "la galería es estática en el repositorio").
- * Photos live in public/images/perros/ — drop new files there and point a
- * `src` at one to update the gallery, no CMS/uploader involved. Thumbnails
- * render at a fixed aspect ratio (see Gallery.tsx), so entries don't need a
- * layout hint here.
- */
-export const galleryItems: GalleryItem[] = [
-  {
-    id: "g1",
-    src: "/images/perros/perrito2.webp",
-    caption: "Golden recién bañado y secado",
-  },
-  {
-    id: "g2",
-    src: "/images/perros/perrito3.webp",
-    caption: "Bulldog francés, terminación prolija",
-  },
-  {
-    id: "g3",
-    src: "/images/perros/perrito5.webp",
-    caption: "Yorkshire con corte de cara",
-  },
-  {
-    id: "g4",
-    src: "/images/perros/perrito7.webp",
-    caption: "Turno de baño y cepillado",
-  },
-  {
-    id: "g5",
-    src: "/images/perros/perrito9.webp",
-    caption: "Después del deslanado",
-  },
-  {
-    id: "g6",
-    src: "/images/perros/perrito12.webp",
-    caption: "Corte de uñas y limpieza de oídos",
-  },
-  {
-    id: "g7",
-    src: "/images/perros/perrito4.webp",
-    caption: "Terminación de manto corto",
-  },
-  {
-    id: "g8",
-    src: "/images/perros/perrito6.webp",
-    caption: "Corte parejo y prolijo",
-  },
-  {
-    id: "g9",
-    src: "/images/perros/perrito8.webp",
-    caption: "Listo después del turno",
-  },
-  {
-    id: "g10",
-    src: "/images/perros/perrito10.webp",
-    caption: "Manto prolijo de cuerpo entero",
-  },
-  {
-    id: "g11",
-    src: "/images/perros/perrito11.webp",
-    caption: "Caniche con corte de cara",
-  },
-  {
-    id: "g12",
-    src: "/images/perros/perrito13.webp",
-    caption: "Baño y secado completo",
-  },
-  {
-    id: "g13",
-    src: "/images/perros/perrito14.webp",
-    caption: "Descansando después del baño",
-  },
-  {
-    id: "g14",
-    src: "/images/perros/perrito15.webp",
-    caption: "Corte de cara y orejas",
-  },
-  {
-    id: "g15",
-    src: "/images/perros/perrito16.webp",
-    caption: "Contento después de su turno",
-  },
-];

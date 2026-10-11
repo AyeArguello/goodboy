@@ -43,6 +43,8 @@
   --motion-base: 200ms;
   --motion-slow: 240ms;
   --ease-standard: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-pop: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /*
@@ -98,5 +100,273 @@ section[id] {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/*
+ * Friendly details the browser would otherwise leave on its defaults: text
+ * selection, caret, form accents and the scrollbar all follow the palette.
+ */
+::selection {
+  background: var(--color-lavender);
+  color: var(--color-charcoal);
+}
+input,
+textarea {
+  caret-color: var(--color-purple);
+}
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--color-purple);
+}
+html {
+  scrollbar-color: var(--color-lavender) transparent;
+  scrollbar-width: thin;
+}
+
+/*
+ * Intro (first visit of the session). The head script in app/layout.tsx sets
+ * data-intro="seen" before first paint when the visitor already saw it, so the
+ * overlay never flashes and the hero starts at once. Otherwise the hero waits
+ * for the overlay: its entrance is delayed by --intro-delay, and because that
+ * is only a delay (not a paused state) the page is fully visible even if no
+ * script ever runs. The overlay also removes itself, with CSS alone, after
+ * its fail-safe timer.
+ */
+:root {
+  --intro-delay: 1.55s;
+}
+html[data-intro="seen"] {
+  --intro-delay: 0s;
+}
+html[data-intro="seen"] .intro-loader {
+  display: none;
+}
+.intro-loader {
+  animation: intro-failsafe 0.4s ease 5s forwards;
+}
+@keyframes intro-failsafe {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* Hero entrance: pure CSS so the headline is painted without waiting for JS. */
+.hero-in {
+  animation: hero-in 0.8s var(--ease-out-soft) both;
+  animation-delay: calc(var(--intro-delay) + var(--hero-delay, 0ms));
+}
+@keyframes hero-in {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.hero-word {
+  display: inline-block;
+  animation: hero-word 0.75s var(--ease-out-soft) both;
+  animation-delay: calc(var(--intro-delay) + var(--hero-delay, 0ms));
+}
+@keyframes hero-word {
+  from {
+    opacity: 0;
+    transform: translateY(0.55em) rotate(2.5deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.hero-pop {
+  animation: hero-pop 0.7s var(--ease-pop) both;
+  animation-delay: calc(var(--intro-delay) + var(--hero-delay, 0ms));
+}
+@keyframes hero-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6) rotate(-14deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.hero-photo {
+  animation: hero-photo 1s var(--ease-out-soft) both;
+  animation-delay: calc(var(--intro-delay) + 120ms);
+}
+@keyframes hero-photo {
+  from {
+    opacity: 0;
+    clip-path: inset(32% 18% 0 18% round 999px 999px 28px 28px);
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0 round 0 0 0 0);
+    transform: none;
+  }
+}
+/* The wavy line under the city is drawn once, after the headline lands. */
+.hero-squiggle path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: hero-draw 0.9s var(--ease-out-soft) forwards;
+  animation-delay: calc(var(--intro-delay) + 900ms);
+}
+@keyframes hero-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Slow, small drifts for the soap bubbles and paws around the hero photo. */
+.float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+.float-slower {
+  animation: float-slow 8.5s ease-in-out infinite reverse;
+}
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(4deg);
+  }
+}
+
+/* Friendly press feedback for every button-like control. */
+.press {
+  transition:
+    transform 180ms var(--ease-pop),
+    background-color var(--motion-base) ease,
+    border-color var(--motion-base) ease,
+    color var(--motion-base) ease;
+}
+@media (hover: hover) {
+  .press:not(:disabled):hover {
+    transform: translateY(-2px);
+  }
+}
+.press:not(:disabled):active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* Credit link: logo and text move as one. */
+.credit-lockup:hover .credit-logo {
+  transform: rotate(-8deg) scale(1.08);
+}
+.credit-logo {
+  transition: transform 260ms var(--ease-pop);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-in,
+  .hero-word,
+  .hero-pop,
+  .hero-photo {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    clip-path: none;
+  }
+  .hero-squiggle path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .float-slow,
+  .float-slower {
+    animation: none;
+  }
+  .intro-loader {
+    animation-duration: 0.01ms;
+    animation-delay: 1s;
+  }
+}
+
+/* Intro overlay entrance: CSS, so the logo paints before any script loads. */
+.intro-pop {
+  animation: intro-pop 0.85s var(--ease-pop) both;
+}
+@keyframes intro-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.72) rotate(-5deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.intro-letter {
+  display: inline-block;
+  white-space: pre;
+  animation: intro-letter 0.45s var(--ease-out-soft) both;
+  animation-delay: calc(500ms + var(--i) * 35ms);
+}
+@keyframes intro-letter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.intro-fade {
+  animation: intro-fade 0.5s ease both;
+  animation-delay: 1.15s;
+}
+@keyframes intro-fade {
+  from {
+    opacity: 0;
+  }
+}
+.intro-paw {
+  display: block;
+  animation: intro-paw 0.5s var(--ease-pop) both;
+  animation-delay: calc(700ms + var(--i) * 200ms);
+}
+@keyframes intro-paw {
+  from {
+    opacity: 0;
+    transform: scale(0.4) rotate(-14deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro-pop,
+  .intro-letter,
+  .intro-fade,
+  .intro-paw {
+    animation: none;
+  }
+}
+
+/* Floating WhatsApp button: a soft entrance a moment after the page loads. */
+@media (prefers-reduced-motion: no-preference) {
+  .wa-float {
+    animation: wa-float-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) 1.2s both;
+  }
+}
+@keyframes wa-float-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }

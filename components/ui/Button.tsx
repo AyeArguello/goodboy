@@ -74,7 +74,7 @@ export function Button({
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       className={cn(
-        "font-heading inline-flex items-center justify-center gap-2 font-semibold transition-colors",
+        "font-heading press inline-flex items-center justify-center gap-2 font-semibold",
         "disabled:border-ink-soft disabled:bg-lavender-100 disabled:text-ink-soft disabled:cursor-not-allowed disabled:border-[1.5px] disabled:border-dashed",
         !isTextVariant && "rounded-full",
         sizeClasses[size],

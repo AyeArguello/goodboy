@@ -48,24 +48,41 @@ export function Footer() {
             © {new Date().getFullYear()} {businessConfig.legalDisclaimerName}
           </span>
         </nav>
-        <div className="border-lavender-100 flex flex-col gap-3 border-t pt-6 sm:col-span-3 sm:flex-row sm:items-center sm:justify-between">
-          <span className="text-ink-soft text-sm">
-            Sitio realizado por GEC Soluciones Digitales
-          </span>
+        <div className="border-lavender-100 flex justify-center border-t pt-6 sm:col-span-3 sm:justify-start">
           <a
             href="https://gecdigital.dev/"
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="Visitar el sitio de GEC Soluciones Digitales (abre en una pestaña nueva)"
-            className="focus-visible:ring-purple inline-flex w-fit items-center rounded-lg p-1 transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+            aria-label="Sitio realizado por GEC Soluciones Digitales (abre en una pestaña nueva)"
+            className="credit-lockup border-lavender hover:border-purple hover:bg-lavender-100 text-charcoal press group inline-flex max-w-full items-center gap-3 rounded-full border-[1.5px] bg-white py-2 pr-5 pl-2 no-underline"
           >
             <Image
               src="/logo-gec.png"
-              alt="GEC Soluciones Digitales"
+              alt=""
               width={722}
               height={608}
-              className="h-auto w-20"
+              className="credit-logo size-12 shrink-0 object-contain"
             />
+            <span className="flex min-w-0 flex-col text-left leading-tight">
+              <span className="text-ink-soft text-xs">Sitio realizado por</span>
+              <span className="font-heading text-[15px] font-bold">
+                GEC Soluciones Digitales
+              </span>
+            </span>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+              className="text-purple shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+            >
+              <path d="M7 17 17 7M8 7h9v9" />
+            </svg>
           </a>
         </div>
       </div>

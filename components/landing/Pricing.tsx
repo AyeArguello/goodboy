@@ -1,4 +1,6 @@
 import { priceRows } from "@/lib/content/landing";
+import { Reveal } from "@/components/motion/Reveal";
+import { SIZE_EXAMPLES } from "@/lib/domain/appointment";
 
 function InfoIcon() {
   return (
@@ -33,19 +35,23 @@ export function Pricing() {
         </h2>
       </div>
       <div className="border-charcoal grid grid-cols-1 border-t-[1.5px] sm:grid-cols-3">
-        {priceRows.map((p) => (
-          <div
-            key={p.key}
-            className="border-lavender-100 flex flex-col gap-1.5 border-b py-7 pr-6"
-          >
-            <span className="font-heading text-purple text-sm font-semibold tracking-[0.06em] uppercase">
-              {p.label}
-            </span>
-            <span className="font-heading text-[clamp(28px,3vw,36px)] leading-tight font-bold tabular-nums">
-              {p.range}
-            </span>
-            <span className="text-ink-soft text-[15px]">ARS</span>
-          </div>
+        {priceRows.map((p, index) => (
+          <Reveal key={p.key} delay={index * 0.08} className="h-full">
+            <div className="border-lavender-100 flex h-full flex-col gap-2 border-b py-7 pr-6">
+              <span className="font-heading text-purple text-sm font-semibold tracking-[0.06em] uppercase">
+                {p.label}
+              </span>
+              <span className="font-heading flex items-baseline gap-2 leading-tight font-bold tabular-nums">
+                <span className="text-ink-soft text-base font-semibold">
+                  ARS
+                </span>
+                <span className="text-[clamp(28px,3vw,36px)]">{p.range}</span>
+              </span>
+              <span className="text-ink-soft text-[15px]">
+                Ej.: {SIZE_EXAMPLES[p.key]}
+              </span>
+            </div>
+          </Reveal>
         ))}
       </div>
       <div
@@ -58,8 +64,8 @@ export function Pricing() {
             El precio final se confirma al recibir a tu perro
           </strong>
           <p className="text-charcoal m-0 text-[17px] text-pretty">
-            Lo definimos al evaluarlo según su tamaño real, el estado del manto
-            y el trabajo necesario. El traslado se cobra aparte.
+            Lo definimos al evaluarlo según su tamaño real, el estado del pelo y
+            el trabajo necesario. El traslado se cobra aparte.
           </p>
         </div>
       </div>

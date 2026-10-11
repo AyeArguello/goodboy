@@ -27,7 +27,7 @@ export function CtaLink({
   return (
     <NextLink
       className={cn(
-        "font-heading inline-flex items-center justify-center gap-2 font-semibold no-underline transition-colors",
+        "font-heading press inline-flex items-center justify-center gap-2 font-semibold no-underline",
         !isTextVariant && "rounded-full",
         buttonSizeClasses[size],
         buttonVariantClasses(variant, onDark),

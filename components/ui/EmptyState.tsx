@@ -7,7 +7,7 @@ export interface EmptyStateProps {
   secondaryAction?: ReactNode;
 }
 
-/** No-fault empty state (e.g. "sin horarios publicados") — never phrased as an error. */
+/** No-fault empty state (e.g. "sin horarios disponibles") — never phrased as an error. */
 export function EmptyState({
   title,
   description,

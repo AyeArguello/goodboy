@@ -1,6 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = 3100;
+// PLAYWRIGHT_PORT=3000 reuses a dev server that is already running (Next allows only
+// one `next dev` per project folder).
+const PORT = Number(process.env.PLAYWRIGHT_PORT ?? 3100);
 // Next dev's cross-origin protection blocks HMR websocket requests from
 // 127.0.0.1 by default (only localhost is allowed out of the box), which
 // silently breaks client hydration for anything loaded through it — every

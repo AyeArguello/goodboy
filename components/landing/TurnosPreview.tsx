@@ -10,12 +10,13 @@ export function TurnosPreview({ days }: { days: DayAvailabilityPreview[] }) {
             Turnero
           </p>
           <h2 className="font-heading m-0 text-[clamp(28px,3.4vw,44px)] leading-tight font-bold tracking-tight text-balance">
-            Horarios publicados
+            Horarios disponibles
           </h2>
           <p className="text-lavender-100 m-0 max-w-[30em]">
-            Publicamos los horarios de a poco para que nadie espere. Se pide con
-            al menos 24 horas de anticipación y cada solicitud queda pendiente
-            hasta que verifiquemos la seña y te confirmemos por email.
+            Atendemos de lunes a viernes a las 9:00, 11:30 y 13:30, y los
+            sábados a las 11:00. Se pide con al menos 24 horas de anticipación y
+            cada solicitud queda pendiente hasta que verifiquemos la seña y te
+            confirmemos por email.
           </p>
           <div className="pt-2">
             <CtaLink href="/turnos" onDark>
@@ -26,7 +27,7 @@ export function TurnosPreview({ days }: { days: DayAvailabilityPreview[] }) {
         <ul className="text-charcoal m-0 flex list-none flex-col rounded-xl bg-white px-4 py-2 sm:px-6">
           {days.length === 0 ? (
             <li className="text-ink-soft flex min-h-11 items-center py-4 text-[15px]">
-              Todavía sin horarios publicados
+              Todavía sin horarios disponibles
             </li>
           ) : (
             days.map((d, i) => (

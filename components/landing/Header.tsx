@@ -6,14 +6,18 @@ import { CtaLink } from "@/components/ui/Link";
 import { nav } from "@/lib/content/landing";
 import { businessConfig } from "@/lib/config/business";
 
-export function Header() {
+/**
+ * `anchorBase` is "" on the landing page (links stay on the page) and "/" on
+ * any other page, so the section links lead back to the landing page.
+ */
+export function Header({ anchorBase = "" }: { anchorBase?: string }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <header className="border-lavender-100 sticky top-0 z-20 border-b bg-white/96 backdrop-blur">
       <div className="mx-auto flex min-h-[72px] max-w-[1280px] items-center gap-6 px-4 py-2 sm:px-8">
         <a
-          href="#inicio"
+          href={`${anchorBase}#inicio`}
           aria-label={`${businessConfig.name} — inicio`}
           className="flex shrink-0"
         >
@@ -34,7 +38,7 @@ export function Header() {
           {nav.map((n) => (
             <a
               key={n.href}
-              href={n.href}
+              href={`${anchorBase}${n.href}`}
               className="font-heading text-charcoal hover:bg-lavender-100 flex min-h-11 items-center rounded-full px-2.5 text-sm font-semibold no-underline"
             >
               {n.label}
@@ -43,7 +47,11 @@ export function Header() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-          <CtaLink href="/turnos" size="md">
+          <CtaLink
+            href="/turnos"
+            size="md"
+            className="whitespace-nowrap max-[360px]:px-4 max-[360px]:text-sm"
+          >
             Solicitar turno
           </CtaLink>
           <button
@@ -77,7 +85,7 @@ export function Header() {
           {nav.map((n) => (
             <a
               key={n.href}
-              href={n.href}
+              href={`${anchorBase}${n.href}`}
               onClick={() => setMenuOpen(false)}
               className="border-lavender-100 font-heading text-charcoal flex min-h-12 items-center border-b text-[17px] font-semibold no-underline"
             >

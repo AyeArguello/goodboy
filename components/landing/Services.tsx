@@ -1,4 +1,5 @@
 import { servicePackages } from "@/lib/content/landing";
+import { Reveal } from "@/components/motion/Reveal";
 
 function CheckIcon() {
   return (
@@ -35,31 +36,33 @@ export function Services() {
           </h2>
           <p className="text-ink-soft m-0 max-w-[28em]">
             Cada turno dura entre 2 h 30 min y 3 h 30 min. Elegís el servicio
-            según el tipo de manto de tu perro; el trabajo puntual se define al
+            según el tipo de pelo de tu perro; el trabajo puntual se define al
             recibirlo.
           </p>
         </div>
         <div className="grid gap-6 md:grid-cols-2 md:gap-8">
-          {servicePackages.map((pkg) => (
-            <div
-              key={pkg.key}
-              className="border-charcoal flex flex-col gap-4 rounded-xl border-[1.5px] bg-white p-6"
-            >
-              <span className="font-heading text-purple text-sm font-semibold">
-                {pkg.n}
-              </span>
-              <strong className="font-heading text-2xl leading-tight font-bold text-balance">
-                {pkg.title}
-              </strong>
-              <ul className="m-0 flex list-none flex-col gap-2 p-0">
-                {pkg.includes.map((item) => (
-                  <li key={item} className="flex items-start gap-2 text-[17px]">
-                    <CheckIcon />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
+          {servicePackages.map((pkg, index) => (
+            <Reveal key={pkg.key} delay={index * 0.1} className="h-full">
+              <div className="border-charcoal flex h-full flex-col gap-4 rounded-xl border-[1.5px] bg-white p-6 transition-transform duration-300 ease-(--ease-pop) motion-safe:hover:-translate-y-1 motion-safe:hover:-rotate-[0.4deg]">
+                <span className="font-heading text-purple text-sm font-semibold">
+                  {pkg.n}
+                </span>
+                <strong className="font-heading text-2xl leading-tight font-bold text-balance">
+                  {pkg.title}
+                </strong>
+                <ul className="m-0 flex list-none flex-col gap-2 p-0">
+                  {pkg.includes.map((item) => (
+                    <li
+                      key={item}
+                      className="flex items-start gap-2 text-[17px]"
+                    >
+                      <CheckIcon />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </Reveal>
           ))}
         </div>
       </div>

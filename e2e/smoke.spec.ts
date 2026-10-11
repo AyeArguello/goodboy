@@ -1,6 +1,11 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("smoke", () => {
+  // The first-visit intro covers the page for a moment; it has its own spec.
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => sessionStorage.setItem("gb-intro", "1"));
+  });
+
   test("landing loads with hero, nav and footer", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
@@ -14,7 +19,7 @@ test.describe("smoke", () => {
       page.getByText(/te avisamos por email en cada paso/i),
     ).toBeVisible();
     const gecLink = page.getByRole("link", {
-      name: /visitar el sitio de gec soluciones digitales/i,
+      name: /sitio realizado por gec soluciones digitales/i,
     });
     await expect(gecLink).toBeVisible();
     await expect(gecLink).toHaveAttribute("href", "https://gecdigital.dev/");
@@ -35,7 +40,7 @@ test.describe("smoke", () => {
   }) => {
     await page.goto("/turnos");
     const hasEmptyState = page.getByText(
-      "Por ahora no hay horarios publicados",
+      "Por ahora no hay horarios disponibles",
     );
     const hasDayPicker = page.getByRole("radiogroup", { name: "Día" });
     await expect(hasEmptyState.or(hasDayPicker)).toBeVisible();
