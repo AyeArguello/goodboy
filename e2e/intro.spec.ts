@@ -134,21 +134,15 @@ test.describe("home reading order", () => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
 
     const order = await page.evaluate(() =>
-      [
-        "inicio",
-        "como-funciona",
-        "servicios",
-        "precios",
-        "acciones",
-        "galeria",
-      ].map(
+      ["inicio", "como-funciona", "servicios", "precios", "acciones"].map(
         (id) => document.getElementById(id)?.getBoundingClientRect().top ?? NaN,
       ),
     );
     expect(order.every((top) => Number.isFinite(top))).toBe(true);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
 
-    // The contact block holds both buttons; the floating button is not there yet.
+    // The contact block holds both buttons. (The gallery section is left out of
+    // the order check: it only exists when the database has photos.)
     const actions = page.locator("#acciones");
     await expect(
       actions.getByRole("link", { name: "Solicitar un turno" }),

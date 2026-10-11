@@ -4,7 +4,7 @@ import { serviceClient } from "../supabase/tests/helpers";
 import { createAdmin, loginAs, removeAdmin } from "./adminSession";
 
 // The gallery is one shared list (and the journey fills it up), so this runs
-// in a single project; the layout on phones is covered by the unit tests.
+// in a single project (the phone project ignores this file in playwright.config.ts).
 const EMAIL = "ci-gallery-admin@example.com";
 const MARK = "eeeeeeee-eeee-4eee-8eee-";
 const CAPTION_PREFIX = "Foto de prueba E2E";
@@ -12,7 +12,6 @@ const CAPTION_PREFIX = "Foto de prueba E2E";
 const CAPTION = `${CAPTION_PREFIX} ${Date.now()}`;
 
 test.describe.configure({ mode: "serial" });
-test.skip(({ isMobile }) => isMobile, "shared gallery state");
 
 function crc32(bytes: Buffer): number {
   let crc = 0xffffffff;

@@ -29,6 +29,12 @@ export default defineConfig({
   },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "mobile-chrome", use: { ...devices["Pixel 5"] } },
+    {
+      name: "mobile-chrome",
+      use: { ...devices["Pixel 5"] },
+      // The gallery journey fills the shared gallery up to its limit, so it
+      // runs once (desktop); skipping it per test would count as skipped in CI.
+      testIgnore: /admin-gallery.spec.ts/,
+    },
   ],
 });
