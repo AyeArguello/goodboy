@@ -20,7 +20,7 @@ export interface DayAvailabilityPreview {
  * for "what can be booked right now".
  *
  * Until a Supabase project is connected this returns an empty list, which
- * renders the legitimate "sin horarios publicados" empty state rather than
+ * renders the legitimate "sin horarios disponibles" empty state rather than
  * inventing example slots.
  */
 export async function getBookableSlots(): Promise<BookableSlot[]> {

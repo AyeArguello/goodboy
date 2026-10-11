@@ -1,6 +1,14 @@
 import "server-only";
 import { getServerSupabaseClient } from "@/lib/supabase/server";
+import { getServiceSupabaseClient } from "@/lib/supabase/service";
+import {
+  HISTORY_STATUSES,
+  historyGroupOf,
+  matchesHistoryQuery,
+  type HistoryFilter,
+} from "@/lib/domain/history";
 import { toDateKey } from "@/lib/domain/datetime";
+import { daysThroughEndOfMonth } from "@/lib/domain/schedule";
 import {
   ACTIVE_APPOINTMENT_STATUSES,
   type AppointmentStatus,
@@ -289,6 +297,65 @@ export async function getRequestsList(
     );
 }
 
+/** How many requests each tab of the list holds (same rules as `getRequestsList`). */
+export async function getRequestCounts(): Promise<
+  Record<RequestsFilter, number>
+> {
+  const rows = await getRequestsList("all");
+  const hasPendingReceipt = (a: AppointmentRow) =>
+    a.receipts.some((r) => r.status === "pending_verification");
+  return {
+    pending_review: rows.filter((a) => a.status === "pending_review").length,
+    receipts: rows.filter(
+      (a) => a.status === "awaiting_deposit" && hasPendingReceipt(a),
+    ).length,
+    awaiting_deposit: rows.filter((a) => a.status === "awaiting_deposit")
+      .length,
+    confirmed: rows.filter((a) => a.status === "confirmed").length,
+    all: rows.length,
+  };
+}
+
+/**
+ * Requests that are over (cancelled, expired, completed, no-show), newest turn
+ * first. `counts` ignores the search so the tabs keep their totals.
+ */
+export async function getHistory(
+  filter: HistoryFilter,
+  query: string,
+): Promise<{
+  appointments: AppointmentRow[];
+  counts: Record<HistoryFilter, number>;
+}> {
+  const supabase = await getServerSupabaseClient();
+  const { data, error } = await supabase
+    .from("appointments")
+    .select(APPOINTMENT_SELECT)
+    .in("status", HISTORY_STATUSES);
+  const rows =
+    error || !data
+      ? []
+      : (data as unknown as RawAppointment[]).map(mapAppointment);
+
+  const counts: Record<HistoryFilter, number> = {
+    all: rows.length,
+    cancelled: 0,
+    expired: 0,
+    completed: 0,
+    no_show: 0,
+  };
+  for (const a of rows) {
+    const group = historyGroupOf(a.status);
+    if (group) counts[group]++;
+  }
+
+  const appointments = rows
+    .filter((a) => filter === "all" || historyGroupOf(a.status) === filter)
+    .filter((a) => matchesHistoryQuery(a, query))
+    .sort((a, b) => b.startsAt.localeCompare(a.startsAt));
+  return { appointments, counts };
+}
+
 export async function getAppointmentById(
   id: string,
 ): Promise<AppointmentRow | null> {
@@ -546,4 +613,137 @@ export async function getFailedEmailsCount(): Promise<number> {
     .select("id", { count: "exact", head: true })
     .eq("status", "failed");
   return count ?? 0;
+}
+
+// ------------------------------------------------- default schedule
+
+/**
+ * The weekly grid is created automatically (see `ensure_default_slots`), so
+ * the panel only has to make sure it exists: the public page does the same the
+ * first time it is opened, and the daily schedule keeps it rolling.
+ * Idempotent and never touches a slot the owner hid. Never throws: a failure
+ * is logged and the panel still shows what exists.
+ */
+export async function ensureDefaultSchedule(): Promise<void> {
+  try {
+    const { error } = await getServiceSupabaseClient().rpc(
+      "ensure_default_slots",
+      {},
+    );
+    if (error) console.error("ensure_default_slots failed:", error.message);
+  } catch (error) {
+    console.error(
+      "ensure_default_slots unavailable:",
+      error instanceof Error ? error.message : "unknown_error",
+    );
+  }
+}
+
+export interface ScheduleSlot {
+  slotId: string;
+  startsAt: string;
+  isPublished: boolean;
+  appointment: {
+    id: string;
+    dogName: string;
+    status: AppointmentStatus;
+  } | null;
+}
+
+export interface ScheduleDay {
+  dateKey: string;
+  /** 0 = Sunday .. 6 = Saturday. */
+  weekday: number;
+  /** Set when the whole day was removed from the schedule. */
+  blocked: { reason: string | null } | null;
+  slots: ScheduleSlot[];
+}
+
+function addDaysToDateKey(dateKey: string, days: number): string {
+  const [y, m, d] = dateKey.split("-").map(Number);
+  const moved = new Date(Date.UTC(y!, m! - 1, d! + days));
+  return moved.toISOString().slice(0, 10);
+}
+
+function weekdayOfDateKey(dateKey: string): number {
+  const [y, m, d] = dateKey.split("-").map(Number);
+  return new Date(Date.UTC(y!, m! - 1, d!)).getUTCDay();
+}
+
+/**
+ * Every day from today for `days` days with its slots (published or not), the
+ * turn that holds each one and whether the day was removed. This is the whole
+ * agenda the owner manages: nothing here is loaded by hand.
+ */
+export async function getScheduleOverview(
+  monthsAhead = 2,
+): Promise<ScheduleDay[]> {
+  await ensureDefaultSchedule();
+  const supabase = await getServerSupabaseClient();
+  const now = new Date();
+  const todayKey = toDateKey(now);
+  const days = daysThroughEndOfMonth(todayKey, monthsAhead);
+
+  const [slotsResult, blockedResult] = await Promise.all([
+    supabase
+      .from("availability_slots")
+      .select("id, starts_at, is_published, appointments(id, dog_name, status)")
+      .gte("starts_at", new Date(now.getTime() - 24 * 3600_000).toISOString())
+      .lt(
+        "starts_at",
+        new Date(now.getTime() + (days + 1) * 24 * 3600_000).toISOString(),
+      )
+      .order("starts_at"),
+    supabase
+      .from("blocked_dates")
+      .select("blocked_date, reason")
+      .gte("blocked_date", todayKey),
+  ]);
+
+  type RawSlot = {
+    id: string;
+    starts_at: string;
+    is_published: boolean;
+    appointments: { id: string; dog_name: string; status: AppointmentStatus }[];
+  };
+  const slotsByDay = new Map<string, ScheduleSlot[]>();
+  for (const row of (slotsResult.data ?? []) as unknown as RawSlot[]) {
+    const key = toDateKey(new Date(row.starts_at));
+    const active = row.appointments.find((a) =>
+      ACTIVE_APPOINTMENT_STATUSES.includes(a.status),
+    );
+    const bucket = slotsByDay.get(key) ?? [];
+    bucket.push({
+      slotId: row.id,
+      startsAt: row.starts_at,
+      isPublished: row.is_published,
+      appointment: active
+        ? { id: active.id, dogName: active.dog_name, status: active.status }
+        : null,
+    });
+    slotsByDay.set(key, bucket);
+  }
+  const blockedByDay = new Map<string, string | null>(
+    (blockedResult.data ?? []).map((b) => [
+      b.blocked_date as string,
+      (b.reason as string | null) ?? null,
+    ]),
+  );
+
+  return Array.from({ length: days }, (_, index) => {
+    const dateKey = addDaysToDateKey(todayKey, index);
+    return {
+      dateKey,
+      weekday: weekdayOfDateKey(dateKey),
+      blocked: blockedByDay.has(dateKey)
+        ? { reason: blockedByDay.get(dateKey) ?? null }
+        : null,
+      slots: slotsByDay.get(dateKey) ?? [],
+    };
+  });
+}
+
+/** The server clock, read outside a render so pages can pass it down as a stable prop. */
+export function serverNowMs(): number {
+  return Date.now();
 }

@@ -10,6 +10,22 @@ function dayOfWeek(dateKey: string): number {
   return new Date(Date.UTC(y!, m! - 1, d!)).getUTCDay();
 }
 
+/**
+ * Days from `todayKey` (inclusive) through the last day of the month that is
+ * `monthsAhead` months after today's: in October with 2, through December 31;
+ * in December, through the end of February. Pure calendar arithmetic on the
+ * date key, so it does not depend on the server's time zone.
+ */
+export function daysThroughEndOfMonth(
+  todayKey: string,
+  monthsAhead: number,
+): number {
+  const [y, m, d] = todayKey.split("-").map(Number);
+  const start = Date.UTC(y!, m! - 1, d!);
+  const end = Date.UTC(y!, m! - 1 + monthsAhead + 1, 0);
+  return Math.round((end - start) / 86_400_000) + 1;
+}
+
 export function isSaturday(dateKey: string): boolean {
   return dayOfWeek(dateKey) === 6;
 }

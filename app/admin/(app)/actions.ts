@@ -16,6 +16,8 @@ import {
 import { runReceiptPurgeNow } from "@/lib/receipts/purgeRunner";
 import type { PurgeSummary } from "@/supabase/functions/_shared/purge";
 import type { PaymentMethod } from "@/lib/domain/appointment";
+import { normalizePhoneAr } from "@/lib/domain/phone";
+import { z } from "zod";
 
 function revalidateAdmin() {
   revalidatePath("/admin/hoy");
@@ -51,6 +53,22 @@ const FRIENDLY_ERRORS: [string, string][] = [
   ["DEPOSIT_WINDOW_EXPIRED", "El plazo de la seña ya venció."],
   ["VALIDATION_ERROR", "Revisá los datos ingresados."],
   ["APPOINTMENT_NOT_FOUND", "No encontramos ese turno."],
+  [
+    "SLOT_TAKEN",
+    "Ese horario ya tiene un turno. Elegí otro o cancelá el que está.",
+  ],
+  [
+    "SLOT_HAS_APPOINTMENT",
+    "Ese horario tiene un turno: cancelalo o reprogramalo antes de quitarlo.",
+  ],
+  [
+    "SLOT_NOT_AVAILABLE",
+    'Ese horario está oculto o el día está quitado. Marcá "Cargar igual" si querés atenderlo de todos modos.',
+  ],
+  ["SLOT_IN_PAST", "Ese horario ya pasó."],
+  ["SLOT_NOT_FOUND", "No encontramos ese horario."],
+  ["DAY_FULL", "Ese día ya tiene el máximo de perros."],
+  ["INVALID_TIME", "Ese horario no está en la grilla de atención."],
 ];
 
 function friendlyError(message: string): string {
@@ -473,6 +491,149 @@ export async function blockDate(
   if (error) return fail(error.message);
   revalidateAdmin();
   return { ok: true };
+}
+
+export async function unblockDate(dateKey: string): Promise<AdminActionResult> {
+  const supabase = await getServerSupabaseClient();
+  const { error } = await supabase.rpc("admin_unblock_date", {
+    p_date: dateKey,
+  });
+  if (error) return fail(error.message);
+  revalidateAdmin();
+  return { ok: true };
+}
+
+// --------------------------------------------------- manual bookings
+
+const optionalText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .optional()
+    .transform((value) => (value ? value : undefined));
+
+const manualAppointmentSchema = z.object({
+  slotId: z.uuid(),
+  dogName: z.string().trim().min(1).max(80),
+  sizeBucket: z.enum(["pequeno", "mediano", "grande"]),
+  breed: optionalText(100),
+  coatState: z.enum(["corto", "largo", "con_nudos", "no_se"]),
+  servicePackage: z.enum(["corto_doble_capa", "crecimiento_continuo"]),
+  notes: optionalText(1000),
+  logisticsMode: z.enum(["self", "pickup"]),
+  neighborhood: optionalText(100),
+  pickupAddress: optionalText(200),
+  ownerName: z.string().trim().min(1).max(80),
+  phone: z.string(),
+  email: z
+    .string()
+    .trim()
+    .max(254)
+    .regex(/^[^@s]+@[^@s]+.[^@s]+$/)
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+  initialStatus: z.enum(["confirmed", "awaiting_deposit"]),
+  depositMethod: z.enum(["cash", "bank_transfer"]).nullable(),
+  force: z.boolean(),
+});
+
+export type ManualAppointmentInput = z.input<typeof manualAppointmentSchema>;
+
+export type ManualAppointmentResult =
+  | { ok: true; appointmentId: string; code: string; emailStatus: EmailStatus }
+  | { ok: false; error: string };
+
+/**
+ * The owner books a turn by hand (phone, WhatsApp, in person) on a free slot.
+ * The database applies the same agenda rules a customer gets (slot free, valid
+ * grid time, day not full) without the customer-side ones (24 h notice, email,
+ * consents). When there is an email the customer is told, like for any other
+ * turn; without one the owner already has the person on the phone.
+ */
+export async function createManualAppointment(
+  input: ManualAppointmentInput,
+): Promise<ManualAppointmentResult> {
+  const admin = await requireAdmin();
+  if (!admin.ok) return admin;
+
+  const parsed = manualAppointmentSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: friendlyError("VALIDATION_ERROR") };
+  }
+  const data = parsed.data;
+
+  const phone = normalizePhoneAr(data.phone);
+  if (!phone.valid) {
+    return {
+      ok: false,
+      error: "El teléfono debe tener 10 números (código de área y número).",
+    };
+  }
+  if (
+    data.logisticsMode === "pickup" &&
+    (!data.neighborhood || !data.pickupAddress)
+  ) {
+    return {
+      ok: false,
+      error: "Para el traslado hace falta el barrio y la dirección.",
+    };
+  }
+  if (data.depositMethod && data.initialStatus !== "confirmed") {
+    return { ok: false, error: friendlyError("VALIDATION_ERROR") };
+  }
+
+  const { data: rows, error } = await admin.supabase.rpc(
+    "admin_create_appointment",
+    {
+      p_slot_id: data.slotId,
+      p_dog_name: data.dogName,
+      p_size_bucket: data.sizeBucket,
+      p_breed: data.breed ?? null,
+      p_coat_state: data.coatState,
+      p_service_package: data.servicePackage,
+      p_notes: data.notes ?? null,
+      p_logistics_mode: data.logisticsMode,
+      p_neighborhood: data.neighborhood ?? null,
+      p_pickup_address: data.pickupAddress ?? null,
+      p_owner_name: data.ownerName,
+      p_phone_e164: phone.e164,
+      p_email: data.email ?? null,
+      p_initial_status: data.initialStatus,
+      p_deposit_method: data.depositMethod,
+      p_force: data.force,
+    },
+  );
+  const created = rows?.[0] as
+    { appointment_id: string; code: string } | undefined;
+  if (error || !created) {
+    return {
+      ok: false,
+      error: error
+        ? friendlyError(error.message)
+        : "No pudimos cargar el turno. Probá de nuevo.",
+    };
+  }
+  revalidateAdmin();
+
+  let emailStatus: EmailStatus = "none";
+  if (data.email) {
+    const supabase = admin.supabase;
+    emailStatus = await notify(() =>
+      data.initialStatus === "confirmed"
+        ? getNotifier().appointmentConfirmed(created.appointment_id)
+        : getNotifier().requestApproved(
+            created.appointment_id,
+            tokenIssuer(supabase),
+          ),
+    );
+  }
+  return {
+    ok: true,
+    appointmentId: created.appointment_id,
+    code: created.code,
+    emailStatus,
+  };
 }
 
 // -------------------------------------------------------- maintenance

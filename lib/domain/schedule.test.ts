@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  daysThroughEndOfMonth,
   getMaxActivePerDayFor,
   getSlotTimesFor,
   isSaturday,
@@ -50,5 +51,25 @@ describe("getMaxActivePerDayFor", () => {
 
   it("allows 0 on Sunday", () => {
     expect(getMaxActivePerDayFor(SUNDAY)).toBe(0);
+  });
+});
+
+describe("daysThroughEndOfMonth", () => {
+  it("reaches the end of the month after next", () => {
+    // 10 Oct .. 31 Dec 2026: 22 + 30 + 31 days.
+    expect(daysThroughEndOfMonth("2026-10-10", 2)).toBe(83);
+    expect(daysThroughEndOfMonth("2026-10-01", 2)).toBe(92);
+    expect(daysThroughEndOfMonth("2026-10-31", 2)).toBe(62);
+  });
+
+  it("rolls over into next year: in December it covers January and February", () => {
+    // 1 Dec 2026 .. 28 Feb 2027: 31 + 31 + 28 days.
+    expect(daysThroughEndOfMonth("2026-12-01", 2)).toBe(90);
+    // 2028 is a leap year.
+    expect(daysThroughEndOfMonth("2027-12-15", 2)).toBe(17 + 31 + 29);
+  });
+
+  it("counts only today when there are no months ahead", () => {
+    expect(daysThroughEndOfMonth("2026-10-10", 0)).toBe(22);
   });
 });
