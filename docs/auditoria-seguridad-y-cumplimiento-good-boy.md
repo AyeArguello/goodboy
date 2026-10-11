@@ -122,7 +122,7 @@ Fuente: [Ley 25.326 de Protección de Datos Personales](https://www.argentina.go
 ### Lo que está bien
 
 - No se pide DNI, CUIT, tarjeta ni datos bancarios.
-- Correo, raza y estado del manto son opcionales.
+- Correo, raza y estado del pelo son opcionales.
 - Dirección y barrio se eliminan del payload cuando el cliente lleva al perro.
 - Estado público de la cita no devuelve nombre, teléfono ni dirección.
 

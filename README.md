@@ -114,7 +114,7 @@ plan están en [`docs/deploy-payment-receipts-production.md`](docs/deploy-paymen
 ## Panel admin — operación
 
 Manual de una página para la dueña: [`docs/manual-operacion.md`](docs/manual-operacion.md) (entrar, Hoy,
-confirmar, reprogramar, cancelar, publicar horarios, WhatsApp). Pensado para imprimir o guardar en el
+confirmar, reprogramar, cancelar, quitar horarios o días, cargar turnos a mano, WhatsApp). Pensado para imprimir o guardar en el
 celular.
 
 ## Testing — qué corre dónde

@@ -9,7 +9,7 @@ Good Boy necesita dos productos integrados:
 1. Una landing page rápida, cálida y optimizada para búsquedas locales que convierta visitas en consultas o solicitudes de turno.
 2. Un turnero pequeño que conserve el control manual de la dueña: ella publica la disponibilidad que quiere ofrecer, el cliente solicita uno de esos espacios y el turno queda pendiente hasta que ella lo confirma.
 
-La decisión principal es **no construir una agenda totalmente automática**. La duración real varía por tamaño, estado del manto y trabajo necesario; además, la dueña habilita lugares de forma progresiva para no tener varios perros esperando. El software debe acompañar ese método, no reemplazarlo por reglas rígidas.
+La decisión principal es **no construir una agenda totalmente automática**. La duración real varía por tamaño, estado del pelo y trabajo necesario; además, la dueña habilita lugares de forma progresiva para no tener varios perros esperando. El software debe acompañar ese método, no reemplazarlo por reglas rígidas.
 
 ### MVP recomendado
 
@@ -44,12 +44,12 @@ La decisión principal es **no construir una agenda totalmente automática**. La
 
 ### Servicios confirmados
 
-1. **Peluquería completa para mantos cortos y doble capa:** baño, deslanado, limpieza de oídos, corte de uñas, limpieza de zona de pulpejos, vaciado de glándulas perianales y terminación final con tijeras.
-2. **Peluquería completa para mantos con crecimiento continuo:** baño, corte de pelo, corte higiénico, corte de uñas, limpieza de oídos, depilado de oídos, limpieza de zona de pulpejos y terminación final.
+1. **Peluquería completa para pelos cortos y doble capa:** baño, deslanado, limpieza de oídos, corte de uñas, limpieza de zona de pulpejos, vaciado de glándulas perianales y terminación final con tijeras.
+2. **Peluquería completa para pelos con crecimiento continuo:** baño, corte de pelo, corte higiénico, corte de uñas, limpieza de oídos, depilado de oídos, limpieza de zona de pulpejos y terminación final.
 
 ### Precios orientativos
 
-El precio final se determina al ver al perro, porque depende de su tamaño real, estado del manto y trabajo requerido.
+El precio final se determina al ver al perro, porque depende de su tamaño real, estado del pelo y trabajo requerido.
 
 | Tamaño informado | Rango orientativo |
 | ---------------- | ----------------: |
@@ -57,7 +57,7 @@ El precio final se determina al ver al perro, porque depende de su tamaño real,
 | Mediano          | ARS 40.000–50.000 |
 | Grande           | ARS 60.000–70.000 |
 
-Texto obligatorio junto a cualquier precio: **“Valores orientativos. El precio final se confirma al recibir y evaluar al perro según tamaño, estado del manto y trabajo necesario.”**
+Texto obligatorio junto a cualquier precio: **“Valores orientativos. El precio final se confirma al recibir y evaluar al perro según tamaño, estado del pelo y trabajo necesario.”**
 
 ### Traslado
 
@@ -110,7 +110,7 @@ La web debe ser una sola página de alto rendimiento, más páginas legales y el
 
 1. **Hero**: explicar en una frase qué ofrece Good Boy y dónde; CTA principal “Solicitar turno” y secundario “Consultar por WhatsApp”.
 2. **Confianza rápida**: atención con turno previo, agenda reducida (hasta tres perros de lunes a viernes y uno los sábados), traslado ida y vuelta y precio confirmado al evaluar al perro. No usar testimonios o años de experiencia si no fueron aportados.
-3. **Servicios**: dos tarjetas principales: mantos cortos/doble capa y mantos con crecimiento continuo, detallando lo incluido sin ocultarlo en un modal.
+3. **Servicios**: dos tarjetas principales: pelos cortos/doble capa y pelos con crecimiento continuo, detallando lo incluido sin ocultarlo en un modal.
 4. **Cómo funciona**: elegir disponibilidad, contar datos del perro, recibir aprobación e instrucciones de seña, pagar ARS 20.000 y obtener confirmación final.
 5. **Precios orientativos**: tres rangos por tamaño y explicación visible, no escondida en letra pequeña.
 6. **Galería “Antes y después / Resultados Good Boy”**: 6–12 fotos reales, grid editorial, lightbox accesible; archivos estáticos optimizados.
@@ -127,7 +127,7 @@ La web debe ser una sola página de alto rendimiento, más páginas legales y el
 - Bajada: **“Baño, secado y corte con turnos planificados para dedicarle a cada perro el tiempo que necesita.”**
 - CTA principal: **“Solicitar un turno”**
 - CTA secundario: **“Hablar por WhatsApp”**
-- Bloque precio: **“Cada manto cuenta una historia distinta”**
+- Bloque precio: **“Cada pelo cuenta una historia distinta”**
 - Galería: **“Perritos que pasaron por Good Boy”**
 - Traslado: **“Lo buscamos y lo llevamos de vuelta”**
 
@@ -197,7 +197,7 @@ Escala móvil-first sugerida: 14, 16, 18, 24, 32, 44 y 64 px, con `clamp()` para
 
 1. Elegir fecha entre los días que tengan slots publicados y respeten 24 h de anticipación.
 2. Elegir horario. Solo se muestran espacios publicados por la dueña.
-3. Indicar nombre del perro, tamaño aproximado, raza o cruza, estado general del manto, servicio buscado y notas.
+3. Indicar nombre del perro, tamaño aproximado, raza o cruza, estado general del pelo, servicio buscado y notas.
 4. Elegir “lo llevo” o “necesito traslado”. Si pide traslado: dirección/barrio y aclaración de que el costo se confirma manualmente.
 5. Indicar nombre del responsable, WhatsApp y correo opcional.
 6. Aceptar política de privacidad, precios orientativos, seña de ARS 20.000 y pérdida de la seña si cancela con menos de 48 horas.
@@ -389,12 +389,12 @@ CONTEXTO REAL DEL NEGOCIO
 - Cada trabajo dura aproximadamente 2 h 30 min a 3 h 30 min.
 - Los turnos solicitados quedan “pendientes de aprobación”. Luego se requiere una seña de ARS 20.000, descontable del total, para confirmarlos.
 - Precios orientativos por tamaño: pequeño ARS 30.000–40.000; mediano ARS 40.000–50.000; grande ARS 60.000–70.000.
-- El precio final se confirma al recibir y evaluar al perro según tamaño real, estado del manto y trabajo necesario.
+- El precio final se confirma al recibir y evaluar al perro según tamaño real, estado del pelo y trabajo necesario.
 - Traslado: barrio Las Palmas sin cargo; barrios cercanos y barrio Jardín ARS 5.000–8.000; zonas más alejadas como Docta o Villa Libertador ARS 10.000–13.000. Es un único cargo por ida y vuelta. Cobertura sujeta a dirección y condiciones de seguridad; no publicar listas estigmatizantes de zonas.
 - Dirección: Manuel Toro 4047, Córdoba Capital, Córdoba, Argentina, CP 5010.
 - WhatsApp: +54 9 3512 72-2097. Instagram: @goodboy.peluca. Dominio: goodboy.com.ar. Admin: <correo-de-la-dueña>.
-- Servicio 1: peluquería completa para mantos cortos y doble capa: baño, deslanado, limpieza de oídos, corte de uñas, limpieza de pulpejos, vaciado de glándulas perianales y terminación con tijeras.
-- Servicio 2: peluquería completa para mantos con crecimiento continuo: baño, corte de pelo, corte higiénico, corte de uñas, limpieza y depilado de oídos, limpieza de pulpejos y terminación final.
+- Servicio 1: peluquería completa para pelos cortos y doble capa: baño, deslanado, limpieza de oídos, corte de uñas, limpieza de pulpejos, vaciado de glándulas perianales y terminación con tijeras.
+- Servicio 2: peluquería completa para pelos con crecimiento continuo: baño, corte de pelo, corte higiénico, corte de uñas, limpieza y depilado de oídos, limpieza de pulpejos y terminación final.
 - Pagos: efectivo, transferencia y tarjeta mediante link de Mercado Pago. La seña admite transferencia y link. Recargos informados: 7% en una cuota y 10,5% en tres; deben someterse a revisión legal antes de publicarse.
 - Cancelación: con menos de 48 horas se pierde la seña.
 - No inventar servicios, premios, testimonios, certificaciones, años de experiencia o promesas médicas.
@@ -425,7 +425,7 @@ ARQUITECTURA DE LA LANDING
 FLUJO DE SOLICITUD DE TURNO
 Diseñar en pasos breves y mobile-first:
 1. Fecha y horario publicado: 09:00, 11:30 o 13:30 de lunes a viernes; únicamente 11:00 los sábados.
-2. Perro: nombre, tamaño aproximado, raza/cruza, estado del manto, servicio y notas.
+2. Perro: nombre, tamaño aproximado, raza/cruza, estado del pelo, servicio y notas.
 3. Logística: “lo llevo” o “necesito traslado”; si hay traslado, pedir barrio/dirección y mostrar que el costo se confirma.
 4. Responsable: nombre, WhatsApp y correo opcional.
 5. Consentimientos: precio orientativo, seña de ARS 20.000, pérdida por cancelar con menos de 48 h y privacidad.
@@ -529,7 +529,7 @@ ETAPA 4 — DATOS Y SEGURIDAD
 ETAPA 5 — TURNERO PÚBLICO
 1. Ruta `/turnos` con pasos: slot, perro, logística, responsable, consentimientos y revisión.
 2. Validación compartida cliente/servidor con mensajes en español claro.
-3. Pedir: nombre del perro, tamaño aproximado, raza/cruza opcional, estado del manto, servicio, notas; modalidad de traslado; barrio/dirección si corresponde; nombre, WhatsApp y correo opcional.
+3. Pedir: nombre del perro, tamaño aproximado, raza/cruza opcional, estado del pelo, servicio, notas; modalidad de traslado; barrio/dirección si corresponde; nombre, WhatsApp y correo opcional.
 4. Normalizar teléfono a formato internacional sin ocultar al usuario el valor editado.
 5. Guardar versiones de términos aceptados, incluyendo seña y cancelación, con timestamps.
 6. Al enviar, crear código no secuencial adivinable, estado `pending_review` y deep link a WhatsApp con resumen. No incluir dirección completa en el mensaje por defecto.

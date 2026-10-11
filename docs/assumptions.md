@@ -29,6 +29,16 @@ técnica (qué bloquea el build); esa es la vista legal/operativa completa.
   `docs/plan-web-good-boy.md`) — falta **registrarlo** de verdad antes del lanzamiento; sigue viniendo de
   `NEXT_PUBLIC_SITE_URL`, nunca hardcodeado.
 - **Correo admin confirmado:** `<correo-de-la-dueña>` (allowlist única por ahora).
+- **Agenda cargada por defecto (decidido 2026-10-10):** la dueña no carga días a mano. La migración
+  `20261011002413_default_schedule_and_manual_bookings.sql` genera y publica sola la grilla de abajo hasta
+  el fin del mes siguiente al próximo (en octubre: octubre, noviembre y diciembre; en diciembre: diciembre,
+  enero y febrero; `ensure_default_slots`, que se ejecuta cuando alguien abre la web o el panel y nunca toca
+  un horario que la dueña quitó). El calendario del panel muestra siempre el mes actual y los 2 siguientes; la
+  web ofrece las próximas 6 semanas. Ella solo **quita** (un horario con
+  el interruptor, o un día completo con `blocked_dates`) y puede volver a abrir. Los turnos cargados a mano
+  (`admin_create_appointment`) aplican las reglas de agenda (horario libre, día no completo, grilla válida)
+  pero no las del cliente (24 h de anticipación, email y consentimientos); el cupo del día y un horario ya
+  tomado no se pueden saltear, y un horario quitado o un día bloqueado solo con "Cargar igual".
 - **Días y horarios — grilla por día, no una sola grilla plana:**
   - Lunes a viernes: horarios de inicio publicables **09:00, 11:30 y 13:30**; cierre 16:00; máximo **3**
     turnos activos por día.
@@ -68,17 +78,22 @@ técnica (qué bloquea el build); esa es la vista legal/operativa completa.
 - **Tipografía:** Montserrat 500/600/700 (títulos/botones/eyebrows) + Nunito Sans 400/600/700 (cuerpo),
   self-host vía `next/font/google`.
 - **Servicios (dos paquetes, reemplazan la lista genérica v1):**
-  1. **Mantos cortos y doble capa:** baño, deslanado, limpieza de oídos, corte de uñas, limpieza de zona de
+  1. **Pelos cortos y doble capa:** baño, deslanado, limpieza de oídos, corte de uñas, limpieza de zona de
      pulpejos, vaciado de glándulas perianales, terminación final con tijeras.
-  2. **Mantos de crecimiento continuo:** baño, corte de pelo, corte higiénico, corte de uñas, limpieza y
+  2. **Pelos de crecimiento continuo:** baño, corte de pelo, corte higiénico, corte de uñas, limpieza y
      depilado de oídos, limpieza de zona de pulpejos, terminación final.
 - **Precios orientativos (ARS):** Pequeño 30.000–40.000 · Mediano 40.000–50.000 · Grande 60.000–70.000.
   Disclaimer obligatorio junto a cualquier precio: _"Valores orientativos. El precio final se confirma al
-  recibir y evaluar al perro según tamaño, estado del manto y trabajo necesario."_
+  recibir y evaluar al perro según tamaño, estado del pelo y trabajo necesario."_
 - **Traslado:** cargo único, ida y vuelta, confirmado por barrio.
   - Barrio Las Palmas: **sin cargo**.
   - Barrios próximos a Las Palmas y barrio Jardín: ARS 5.000–8.000.
   - Zonas más alejadas (ej. Docta, Villa Libertador): ARS 10.000–13.000.
+  - En el turnero el cliente busca su barrio entre los 450 barrios de Córdoba capital (datos abiertos de la
+    Municipalidad, `lib/config/barriosCordoba.ts`) y ve el costo al instante. Quien vive fuera de la ciudad no
+    puede elegir barrio y se lo deriva a WhatsApp; el servidor también valida que el barrio sea de la lista.
+    **Pendiente: la dueña debe revisar la zona de cada barrio.** La zona es un borrador por distancia al barrio
+    Las Palmas (hasta 9 km = cercano, más = alejado); para corregirla se mueve el nombre de una lista a otra.
   - No publicar una lista de barrios excluidos por inseguridad: el copy dice "servicio sujeto a cobertura y
     condiciones de seguridad; confirmamos tu dirección por WhatsApp" — nunca nombra zonas rechazadas.
 - **Pagos:** efectivo, transferencia, o tarjeta vía link de Mercado Pago. Recargos informados por el
@@ -155,11 +170,29 @@ claves como variables de entorno de Netlify.
   no se confía en `x-forwarded-for` (todos comparten la clave "unknown"). `x-forwarded-for` queda solo para
   desarrollo, CI y ejecución fuera de Netlify.
 - **Design system:** tokens como variables CSS + Tailwind v4 `@theme`, sin reescribir Tailwind desde cero.
-- **Galería:** estática (manifiesto tipado en `lib/content/landing.ts`), sin CMS. Usa fotos reales tomadas
-  en el local (`public/images/perros/`) para el Hero y las 15 fichas paginadas de la galería (4 por
-  página); agregar/reemplazar una foto es editar ese manifiesto y dejar el archivo en esa carpeta, no
-  requiere build de otra herramienta. Los captions son descriptivos genéricos (tipo de corte/servicio) —
-  quedan a confirmar por la dueña si quiere nombres de perros o textos más específicos por foto.
+- **Dos personas, mismo turno (regla de seguridad, 2026-10-12):** un turno nunca se reserva dos veces.
+  `request_appointment` (y `admin_create_appointment`) bloquean la fila del horario (`FOR UPDATE`), así que los
+  pedidos simultáneos se procesan **uno detrás del otro**: gana el primero en llegar y el resto recibe
+  `SLOT_TAKEN`; el índice único `appointments_active_per_slot_idx` es la última barrera. En el turnero, quien
+  pierde ve "Ese turno ya fue tomado" con sus datos intactos y el botón "Elegir otro horario"; el horario
+  ocupado desaparece de la lista y la disponibilidad se vuelve a leer del servidor. Cubierto por tests de
+  integración (10 pedidos simultáneos, cliente contra dueña) y un E2E con dos personas.
+- **Orden de la home y botones (pedido de la clienta, 2026-10-11):** la gente abre la web desde el celular y no
+  lee, así que los botones "Solicitar un turno" / "Hablar por WhatsApp" ya no están en la primera pantalla.
+  Orden: título y descripción → foto con los puntos (turno previo, 3 perros, traslado, precio final) → Cómo
+  funciona (pasos 1 a 5) → Lo que hacemos (pelos cortos y doble capa / pelo de crecimiento continuo) →
+  Precios → **bloque de contacto con los dos botones** (`#acciones`) → Galería, Traslado y el resto. Arriba a la
+  derecha se mantiene "Solicitar turno". El botón flotante de WhatsApp, en la home, recién aparece cuando se
+  llega a ese bloque (en el resto de las páginas se ve desde el principio).
+- **Galería (decidido 2026-10-12):** ya no es estática. Las fotos viven en el bucket público `gallery` de
+  Supabase Storage y su metadato en la tabla `gallery_photos` (migración `20261012120000_gallery.sql`); la
+  dueña las agrega y quita desde **Admin → Galería**. Máximo **25 fotos**, validado en tres lugares: la pantalla
+  (deshabilita la subida), la acción del servidor y un trigger de la base (el definitivo, aguanta subidas
+  simultáneas). La foto se achica en el navegador antes de subir (lado mayor 1600 px, WebP) y el servidor
+  revisa los bytes reales y el tamaño; los nombres de archivo son aleatorios. En la home se muestran las 4
+  más nuevas con un botón a `/galeria`, que tiene todas en columnas tipo Pinterest, loader inicial y
+  animaciones con Motion. Los textos de cada foto son descriptivos genéricos, a ajustar por la dueña. El Hero
+  sigue usando `public/images/perros/perrito1.webp`.
 - **Feature flags:** `NEXT_PUBLIC_FEATURE_TURNSTILE` (captcha, off por defecto). La seña **ya no es un
   feature flag apagado** — es un requisito confirmado del MVP v2 (ver §6).
 - **Recargo de tarjeta (v3):** ya no es un porcentaje único nullable — es

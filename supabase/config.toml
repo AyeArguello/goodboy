@@ -17,8 +17,9 @@ port = 54323
 
 [auth]
 enabled = true
-site_url = "http://127.0.0.1:3000"
+site_url = "http://localhost:3000"
 additional_redirect_urls = [
+  "http://localhost:3000/admin/auth/reset",
   "http://127.0.0.1:3000/admin/auth/reset",
   "http://localhost:3100/admin/auth/reset",
 ]
@@ -30,6 +31,14 @@ enable_signup = false
 [auth.email]
 enable_confirmations = false
 
+# Same recovery email as production (supabase/templates/recovery.html is the
+# local copy of the hosted "Reset password" template): the link opens
+# /admin/auth/confirm with a token hash, so it works from any browser. Read the
+# message in Inbucket, http://127.0.0.1:54324.
+[auth.email.template.recovery]
+subject = "Crear contraseña nueva - Good Boy"
+content_path = "./supabase/templates/recovery.html"
+
 [inbucket]
 enabled = true
 port = 54324
@@ -40,6 +49,14 @@ port = 54324
 # sees files only through short-lived signed URLs.
 [storage.buckets.payment-receipts]
 public = false
+file_size_limit = "5MiB"
+allowed_mime_types = ["image/jpeg", "image/png", "image/webp"]
+
+# Public bucket for the gallery photos (also created by the
+# 20261012120000_gallery migration on hosted projects). Anyone can read; only the
+# server (service role) writes, after checking the admin session.
+[storage.buckets.gallery]
+public = true
 file_size_limit = "5MiB"
 allowed_mime_types = ["image/jpeg", "image/png", "image/webp"]
 

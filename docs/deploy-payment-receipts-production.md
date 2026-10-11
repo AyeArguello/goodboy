@@ -36,23 +36,26 @@ más abajo como trazabilidad:
   que verificar el dominio antes de usar `turnos@goodboy.com.ar`. Las páginas
   legales siguen como borrador `noindex`.
 
-> **Este documento es un procedimiento, no una autorización.** Nada de lo que
-> sigue se ejecuta hasta que haya una autorización explícita y por escrito para
-> cada fase (ver la checklist final). Ningún valor de secreto aparece acá ni
-> debe aparecer en la consola, el historial de la shell, el repositorio ni los
-> logs.
+### Aplicado en producción: agenda por defecto, turnos a mano y galería (2026-10-12)
 
-Convenciones:
+Con autorización explícita, el 2026-10-12 se aplicaron en `rmfnrvidepyirtvjumgy`
+las dos migraciones que faltaban: `20261011002413_default_schedule_and_manual_bookings`
+y `20261012120000_gallery`. Antes: `migration list` (solo esas dos pendientes),
+`db push --dry-run` (solo esas dos) y un respaldo del esquema fuera del repo
+(`Page/backups-supabase/2026-10-12/schema.sql`; la base no tenía turnos, pagos ni
+comprobantes, solo 1 administradora). Después: `migration list` con las 15 en
+Local = Remote.
 
-- Los comandos son para **Git Bash** y se ejecutan desde la raíz del repo. Si
-  la CLI no está instalada globalmente, reemplazar `supabase` por
-  `npx supabase` (se probó la 2.119.0).
-- `BACKUP_DIR` es una carpeta **fuera del repositorio**, por ejemplo
-  `"$HOME/backups/good-boy/$(date +%Y%m%d-%H%M)"`.
-- `<TOKEN>` y `<SECRETO>` nunca se escriben en un comando: se leen con
-  `read -rs` o se pasan por archivo temporal fuera del repo (ver 6 y 8).
-
----
+- Verificado en el remoto: las seis funciones nuevas existen con los permisos
+  esperados (`ensure_default_slots` solo `service_role`; las `admin_*` solo
+  `authenticated`), `gallery_photos` con RLS (lectura pública), el trigger del
+  límite de 25 fotos y el bucket público `gallery` (5 MB, JPG/PNG/WebP).
+- Las 15 fotos originales se subieron al bucket y se registraron en
+  `gallery_photos` (los 15 archivos existen, se sirven por URL pública como
+  `image/webp`). La agenda se genera sola la primera vez que alguien abre la web
+  o el panel (hoy `availability_slots` está vacía).
+- **Falta desplegar el código** (no se hizo): hasta entonces el sitio publicado es
+  el viejo, que no usa nada de esto y sigue funcionando contra la base nueva.
 
 ## 0. Estado verificado en el preflight (solo lectura)
 

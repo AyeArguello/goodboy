@@ -1,0 +1,13 @@
+<h2>Crear una contraseña nueva</h2>
+<p>Recibimos un pedido para recuperar el acceso al panel de Good Boy.</p>
+<p>
+  <a
+    href="{{ .SiteURL }}/admin/auth/confirm?token_hash={{ .TokenHash }}&type=recovery"
+    >Crear contraseña nueva</a
+  >
+</p>
+<p>
+  El enlace sirve una sola vez y vence en una hora. Podés abrirlo desde
+  cualquier navegador o desde el celular.
+</p>
+<p>Si no fuiste vos, ignorá este correo: tu contraseña actual no cambia.</p>
