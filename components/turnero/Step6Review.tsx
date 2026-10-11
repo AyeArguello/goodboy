@@ -1,3 +1,4 @@
+import { quoteTransport } from "@/lib/domain/transport";
 import { Alert } from "@/components/ui/Alert";
 import { businessConfig } from "@/lib/config/business";
 import {
@@ -33,7 +34,7 @@ export function Step6Review({
         form.dogName,
         form.sizeBucket && SIZE_LABELS[form.sizeBucket],
         form.breed,
-        form.coatState && `manto ${COAT_LABELS[form.coatState].toLowerCase()}`,
+        form.coatState && `pelo ${COAT_LABELS[form.coatState].toLowerCase()}`,
         form.servicePackage && SERVICE_PACKAGE_LABELS[form.servicePackage],
       ]
         .filter(Boolean)
@@ -44,7 +45,7 @@ export function Step6Review({
       label: "Logística",
       value:
         form.logisticsMode === "pickup"
-          ? `Necesito traslado · ${form.neighborhood} · costo a confirmar`
+          ? `Necesito traslado · ${form.neighborhood} · ${quoteTransport(form.neighborhood)?.amount ?? "a confirmar"} (se confirma por WhatsApp)`
           : `Lo llevo yo a ${businessConfig.address.street}`,
       step: 3,
     },

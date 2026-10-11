@@ -54,3 +54,9 @@ export const STEP_NAMES = [
   "Consentimientos",
   "Revisión",
 ];
+
+export interface TakenNotice {
+  /** What the person had chosen, e.g. "martes, 13 de octubre · 09:00". */
+  label: string;
+  reason: "SLOT_TAKEN" | "DAY_FULL";
+}

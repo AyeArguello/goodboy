@@ -2,9 +2,11 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import { formatDayLabel } from "../lib/domain/datetime";
 import { createHash, randomBytes } from "node:crypto";
 import {
+  anonClient,
   createTestAdminClient,
   nextWeekdayDateKey,
   serviceClient,
+  validAppointmentPayload,
 } from "../supabase/tests/helpers";
 
 /**
@@ -100,10 +102,30 @@ function requireSupabase() {
 async function pickSlot(page: Page, dateKey: string, time: string) {
   const dayLabel = formatDayLabel(new Date(`${dateKey}T12:00:00-03:00`));
   await page.goto("/turnos");
-  await page
-    .getByRole("radio", { name: new RegExp(`^${dayLabel}`, "i") })
-    .click();
+  const day = page.getByRole("radio", {
+    name: new RegExp(`^${dayLabel}`, "i"),
+  });
+  if (!(await day.isVisible())) {
+    // The picker shows one month at a time: switch to the day's month.
+    const month = new Intl.DateTimeFormat("es-AR", {
+      month: "long",
+      timeZone: "UTC",
+    }).format(new Date(`${dateKey}T12:00:00Z`));
+    await page
+      .getByRole("radiogroup", { name: "Mes" })
+      .getByRole("radio", { name: new RegExp(`^${month}`, "i") })
+      .click();
+  }
+  await day.click();
   await page.getByRole("radio", { name: new RegExp(`^${time}`) }).click();
+}
+
+/** Another person's request for the same turn, straight to the database. */
+async function anonRpc(slotId: string) {
+  return anonClient().rpc("request_appointment", {
+    ...validAppointmentPayload(slotId),
+    p_client_key: `e2e-other-person-${crypto.randomUUID()}`,
+  });
 }
 
 async function fillWizard(page: Page, email: string) {
@@ -111,13 +133,13 @@ async function fillWizard(page: Page, email: string) {
   await page.getByLabel("Nombre del perro").fill("Luna E2E");
   await page.getByRole("radio", { name: /Mediano/ }).click();
   await page
-    .getByRole("radio", { name: /Mantos de crecimiento continuo/ })
+    .getByRole("radio", { name: /Pelos de crecimiento continuo/ })
     .click();
   await page.getByRole("button", { name: "Continuar" }).click();
   await page.getByRole("radio", { name: /Lo llevo yo/ }).click();
   await page.getByRole("button", { name: "Continuar" }).click();
   await page.getByLabel("Tu nombre").fill("Carolina E2E");
-  await page.getByLabel("WhatsApp").fill("3511234567");
+  await page.getByLabel("WhatsApp", { exact: true }).fill("3511234567");
   await page.getByLabel("Correo").fill(email);
   await page.getByRole("button", { name: "Continuar" }).click();
   for (const name of [
@@ -152,13 +174,13 @@ test.describe("receipt journey (needs Supabase)", () => {
       await page.getByLabel("Nombre del perro").fill("Luna");
       await page.getByRole("radio", { name: /Mediano/ }).click();
       await page
-        .getByRole("radio", { name: /Mantos de crecimiento continuo/ })
+        .getByRole("radio", { name: /Pelos de crecimiento continuo/ })
         .click();
       await page.getByRole("button", { name: "Continuar" }).click();
       await page.getByRole("radio", { name: /Lo llevo yo/ }).click();
       await page.getByRole("button", { name: "Continuar" }).click();
       await page.getByLabel("Tu nombre").fill("Carolina");
-      await page.getByLabel("WhatsApp").fill("3511234567");
+      await page.getByLabel("WhatsApp", { exact: true }).fill("3511234567");
       await page.getByRole("button", { name: "Continuar" }).click();
       await expect(page.getByText(/Escribí tu correo/)).toBeVisible();
       await page.getByLabel("Correo").fill("no-es-un-correo");
@@ -354,6 +376,91 @@ test.describe("receipt page without a valid link", () => {
     await expect(
       page.getByRole("button", { name: "Enviar comprobante" }),
     ).toHaveCount(0);
+  });
+
+  test("when somebody else takes the turn first, the second person is told and picks another", async ({
+    page,
+  }, info) => {
+    requireSupabase();
+    const mobile = info.project.name === "mobile-chrome";
+    // Own day per project so the two projects never fight over the same slots.
+    const dateKey = mobile
+      ? nextWeekdayDateKey(430, 550)
+      : nextWeekdayDateKey(300, 420);
+    const takenTime = "09:00";
+    const otherTime = "13:30";
+    const svc = serviceClient();
+    const makeSlot = async (time: string) => {
+      const startsAt = `${dateKey}T${time}:00-03:00`;
+      await svc.from("availability_slots").delete().eq("starts_at", startsAt);
+      const { data } = await svc
+        .from("availability_slots")
+        .insert({ starts_at: startsAt, is_published: true })
+        .select("id")
+        .single();
+      return data!.id as string;
+    };
+    const takenSlot = await makeSlot(takenTime);
+    const otherSlot = await makeSlot(otherTime);
+    const email = `e2e-race-${info.project.name}-${Date.now()}@example.com`;
+
+    try {
+      // The second person chooses the turn and fills in the whole request...
+      await pickSlot(page, dateKey, takenTime);
+      await fillWizard(page, email);
+
+      // ...but somebody else requests that very turn first.
+      const first = await anonRpc(takenSlot);
+      expect(first.error).toBeNull();
+
+      // Sending now is refused: the person is told, with the way back.
+      await page.getByRole("button", { name: "Enviar solicitud" }).click();
+      const notice = page.getByRole("alert").filter({
+        hasText: "Ese turno ya fue tomado",
+      });
+      await expect(notice).toBeVisible({ timeout: 20_000 });
+      await expect(notice).toContainText("Tus datos quedan guardados");
+      await expect(
+        page.getByRole("button", { name: "Elegir otro horario" }),
+      ).toBeVisible();
+
+      // The taken turn is gone from the list; another one is still there.
+      await expect(
+        page.getByRole("radio", { name: new RegExp(`^${takenTime}`) }),
+      ).toHaveCount(0);
+      await page
+        .getByRole("radio", { name: new RegExp(`^${otherTime}`) })
+        .click();
+
+      // The data they had typed is still there: they can finish the request.
+      await page.getByRole("button", { name: "Continuar" }).click();
+      await expect(page.getByLabel("Nombre del perro")).toHaveValue("Luna E2E");
+      for (let i = 0; i < 4; i++) {
+        await page.getByRole("button", { name: "Continuar" }).click();
+      }
+      await page.getByRole("button", { name: "Enviar solicitud" }).click();
+      await expect(
+        page.getByRole("heading", { name: "Recibimos tu solicitud" }),
+      ).toBeVisible({ timeout: 20_000 });
+
+      // Each turn ended up with exactly one request.
+      for (const slotId of [takenSlot, otherSlot]) {
+        const { count } = await svc
+          .from("appointments")
+          .select("id", { count: "exact", head: true })
+          .eq("slot_id", slotId);
+        expect(count).toBe(1);
+      }
+    } finally {
+      await svc
+        .from("appointments")
+        .delete()
+        .in("slot_id", [takenSlot, otherSlot]);
+      await svc
+        .from("availability_slots")
+        .delete()
+        .in("id", [takenSlot, otherSlot]);
+    }
   });
 
   test("never indexes the personal link", async ({ page }) => {

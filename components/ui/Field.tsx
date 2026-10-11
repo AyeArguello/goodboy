@@ -3,6 +3,7 @@
 import {
   useId,
   type InputHTMLAttributes,
+  type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from "react";
 import { cn } from "@/lib/ui/cn";
@@ -142,6 +143,43 @@ export function TextField({
         errorId={errorId}
         hintId={hintId}
       />
+    </div>
+  );
+}
+
+export interface SelectFieldProps extends Omit<
+  SelectHTMLAttributes<HTMLSelectElement>,
+  "id" | "className"
+> {
+  label: string;
+  error?: string;
+}
+
+export function SelectField({
+  label,
+  error,
+  children,
+  ...selectProps
+}: SelectFieldProps) {
+  const id = useId();
+  const errorId = `${id}-error`;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <FieldLabel id={id} label={label} />
+      <select
+        id={id}
+        aria-invalid={!!error}
+        aria-describedby={error ? errorId : undefined}
+        className={cn(
+          baseControlClasses,
+          "min-h-13",
+          error ? "border-error border-2" : "border-ink-soft",
+        )}
+        {...selectProps}
+      >
+        {children}
+      </select>
+      <FieldMessages error={error} errorId={errorId} hintId={`${id}-hint`} />
     </div>
   );
 }

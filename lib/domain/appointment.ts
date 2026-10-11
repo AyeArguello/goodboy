@@ -121,6 +121,13 @@ export const SIZE_LABELS: Record<SizeBucket, string> = {
   grande: "Grande",
 };
 
+/** Familiar breeds so the owner can place their dog without knowing exact weights. */
+export const SIZE_EXAMPLES: Record<SizeBucket, string> = {
+  pequeno: "Caniche Toy, Chihuahua, Yorkshire",
+  mediano: "Beagle, Cocker, Border Collie",
+  grande: "Labrador, Golden, Ovejero Alemán",
+};
+
 export const COAT_LABELS: Record<CoatState, string> = {
   corto: "Corto",
   largo: "Largo",
@@ -138,8 +145,8 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
 export type ServicePackageKey = "corto_doble_capa" | "crecimiento_continuo";
 
 export const SERVICE_PACKAGE_LABELS: Record<ServicePackageKey, string> = {
-  corto_doble_capa: "Mantos cortos y doble capa",
-  crecimiento_continuo: "Mantos de crecimiento continuo",
+  corto_doble_capa: "Pelos cortos y doble capa",
+  crecimiento_continuo: "Pelos de crecimiento continuo",
 };
 
 export const SERVICE_PACKAGE_INCLUDES: Record<ServicePackageKey, string[]> = {

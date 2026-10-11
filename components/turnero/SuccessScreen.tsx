@@ -59,9 +59,9 @@ export function SuccessScreen({
           <StatusBadge status="pending_review" />
         </div>
         <p className="text-ink-soft m-0">
-          Tu turno todavía no está confirmado. La dueña revisa cada solicitud y
-          te avisa por email a <strong>{email}</strong>. Si la aprueba, te va a
-          pedir una seña de ARS{" "}
+          Tu turno todavía no está confirmado. La peluquera revisa cada
+          solicitud y te avisa por email a <strong>{email}</strong>. Si la
+          aprueba, te va a pedir una seña de ARS{" "}
           {businessConfig.deposit.amountArs.toLocaleString("es-AR")} (se
           descuenta del total) para confirmarlo.
         </p>

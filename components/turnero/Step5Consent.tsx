@@ -1,3 +1,7 @@
+"use client";
+
+import { LegalDialogs } from "@/components/legal/LegalDialogs";
+import { SelectableCard } from "@/components/ui/SelectableCard";
 import { businessConfig } from "@/lib/config/business";
 import type { StepFormProps } from "./Step2Dog";
 
@@ -8,7 +12,7 @@ function CheckIcon() {
       height="14"
       viewBox="0 0 24 24"
       fill="none"
-      stroke="white"
+      stroke="#684e7a"
       strokeWidth="3"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -51,23 +55,17 @@ export function Step5Consent({ form, errors, setField }: StepFormProps) {
           const checked = form[c.key];
           const invalid = !!errors.consent && !checked;
           return (
-            <button
+            <SelectableCard
               key={c.key}
-              type="button"
               role="checkbox"
-              aria-checked={checked}
+              selected={checked}
+              invalid={invalid}
               onClick={() => setField(c.key, !checked)}
-              className={`grid grid-cols-[auto_1fr] items-start gap-3.5 rounded-lg border-[1.5px] bg-white px-4 py-4 text-left ${
-                invalid
-                  ? "border-error"
-                  : checked
-                    ? "border-purple"
-                    : "border-lavender"
-              }`}
+              className="grid grid-cols-[auto_1fr] items-start gap-3.5 rounded-lg px-4 py-4"
             >
               <span
                 className={`mt-0.5 flex size-6 items-center justify-center rounded-sm border-2 ${
-                  checked ? "border-purple bg-purple" : "border-ink-soft"
+                  checked ? "border-white bg-white" : "border-ink-soft"
                 }`}
               >
                 {checked ? <CheckIcon /> : null}
@@ -76,9 +74,13 @@ export function Step5Consent({ form, errors, setField }: StepFormProps) {
                 <strong className="font-heading text-base font-bold">
                   {c.title}
                 </strong>
-                <span className="text-ink-soft text-[15px]">{c.text}</span>
+                <span
+                  className={`text-[15px] ${checked ? "text-white/90" : "text-ink-soft"}`}
+                >
+                  {c.text}
+                </span>
               </span>
-            </button>
+            </SelectableCard>
           );
         })}
       </div>
@@ -89,15 +91,7 @@ export function Step5Consent({ form, errors, setField }: StepFormProps) {
         </span>
       ) : null}
 
-      <a href="/privacidad" className="flex min-h-11 items-center text-sm">
-        Leer política de privacidad completa
-      </a>
-      <a
-        href="/terminos-de-reserva"
-        className="flex min-h-11 items-center text-sm"
-      >
-        Leer términos de reserva completos
-      </a>
+      <LegalDialogs />
     </section>
   );
 }

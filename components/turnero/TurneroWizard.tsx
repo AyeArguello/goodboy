@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useReducer, useTransition } from "react";
+import { useMemo, useReducer, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Stepper } from "@/components/ui/Stepper";
 import { Button } from "@/components/ui/Button";
@@ -15,10 +15,12 @@ import {
   initialForm,
   STEP_NAMES,
   TOTAL_STEPS,
+  type TakenNotice,
   type WizardFieldErrors,
   type WizardForm,
 } from "./types";
 import { groupSlotsByDay } from "./grouping";
+import { findBarrio } from "@/lib/domain/transport";
 import { Step1Slot } from "./Step1Slot";
 import { Step2Dog } from "./Step2Dog";
 import { Step3Logistics } from "./Step3Logistics";
@@ -35,7 +37,8 @@ interface State {
   errors: WizardFieldErrors;
   sending: boolean;
   networkError: boolean;
-  takenBanner: boolean;
+  /** Set when the server said somebody else got the chosen turn first. */
+  taken: TakenNotice | null;
   successCode: string | null;
 }
 
@@ -51,7 +54,11 @@ type Action =
   | { type: "SET_ERRORS"; errors: WizardFieldErrors }
   | { type: "SUBMIT_START" }
   | { type: "SUBMIT_SUCCESS"; code: string }
-  | { type: "SUBMIT_TAKEN" }
+  | {
+      type: "SUBMIT_TAKEN";
+      label: string;
+      reason: TakenNotice["reason"];
+    }
   | { type: "SUBMIT_NETWORK_ERROR" };
 
 function reducer(state: State, action: Action): State {
@@ -72,7 +79,7 @@ function reducer(state: State, action: Action): State {
         errors: { ...state.errors, [action.field]: undefined },
       };
     case "GO_STEP":
-      return { ...state, step: action.step, errors: {}, takenBanner: false };
+      return { ...state, step: action.step, errors: {}, taken: null };
     case "SET_ERRORS":
       return { ...state, errors: action.errors };
     case "SUBMIT_START":
@@ -85,7 +92,7 @@ function reducer(state: State, action: Action): State {
         sending: false,
         step: 1,
         selectedSlotId: null,
-        takenBanner: true,
+        taken: { label: action.label, reason: action.reason },
       };
     case "SUBMIT_NETWORK_ERROR":
       return { ...state, sending: false, networkError: true };
@@ -127,13 +134,13 @@ function validateStep(step: number, state: State): WizardFieldErrors {
     if (!form.dogName.trim()) errors.dogName = "Escribí el nombre de tu perro.";
     if (!form.sizeBucket) errors.sizeBucket = "Elegí un tamaño aproximado.";
     if (!form.servicePackage)
-      errors.servicePackage = "Elegí el servicio según el manto de tu perro.";
+      errors.servicePackage = "Elegí el servicio según el pelo de tu perro.";
   }
   if (step === 3) {
     if (!form.logisticsMode) errors.logisticsMode = "Elegí una opción.";
     if (form.logisticsMode === "pickup") {
-      if (!form.neighborhood.trim())
-        errors.neighborhood = "Indicá tu barrio para calcular el traslado.";
+      if (!findBarrio(form.neighborhood))
+        errors.neighborhood = "Elegí tu barrio de la lista.";
       if (!form.pickupAddress.trim())
         errors.pickupAddress = "Escribí la dirección donde lo buscamos.";
     }
@@ -165,7 +172,14 @@ function validateStep(step: number, state: State): WizardFieldErrors {
 export function TurneroWizard({ slots }: { slots: BookableSlot[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const days = useMemo(() => groupSlotsByDay(slots), [slots]);
+  // Slots the server refused in this session: hidden at once, without waiting
+  // for the refreshed list to arrive.
+  const [takenSlotIds, setTakenSlotIds] = useState<string[]>([]);
+  const days = useMemo(
+    () =>
+      groupSlotsByDay(slots.filter((s) => !takenSlotIds.includes(s.slotId))),
+    [slots, takenSlotIds],
+  );
 
   const [state, dispatch] = useReducer(reducer, {
     step: 1,
@@ -175,7 +189,7 @@ export function TurneroWizard({ slots }: { slots: BookableSlot[] }) {
     errors: {},
     sending: false,
     networkError: false,
-    takenBanner: false,
+    taken: null,
     successCode: null,
   });
 
@@ -247,7 +261,15 @@ export function TurneroWizard({ slots }: { slots: BookableSlot[] }) {
           result.formError === "SLOT_TAKEN" ||
           result.formError === "DAY_FULL"
         ) {
-          dispatch({ type: "SUBMIT_TAKEN" });
+          // Somebody else got there first. Drop the slot from the list right
+          // away, say so, and re-read the real availability from the server.
+          dispatch({
+            type: "SUBMIT_TAKEN",
+            label: slotLabel,
+            reason: result.formError,
+          });
+          setTakenSlotIds((ids) => [...ids, payload.slotId]);
+          router.refresh();
         } else if (Object.keys(result.fieldErrors).length > 0) {
           const fieldErrors = result.fieldErrors as WizardFieldErrors;
           dispatch({ type: "GO_STEP", step: stepForErrors(fieldErrors) });
@@ -322,7 +344,7 @@ export function TurneroWizard({ slots }: { slots: BookableSlot[] }) {
             selectedDateKey={state.selectedDateKey}
             selectedSlotId={state.selectedSlotId}
             error={state.errors.slot}
-            takenBanner={state.takenBanner}
+            taken={state.taken}
             onSelectDate={(dateKey) =>
               dispatch({ type: "SELECT_DATE", dateKey })
             }

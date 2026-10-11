@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { bookAppointment } from "@/lib/data/appointments";
 import { normalizePhoneAr } from "@/lib/domain/phone";
+import { findBarrio } from "@/lib/domain/transport";
 import { getNotifier } from "@/lib/notifications/dispatch";
 import { CONSENT_KEYS, CONSENT_TEXT_VERSION } from "@/lib/domain/appointment";
 
@@ -16,7 +17,7 @@ const bookingSchema = z
     breed: z.string().trim().optional(),
     coatState: z.enum(["corto", "largo", "con_nudos", "no_se"]).optional(),
     servicePackage: z.enum(["corto_doble_capa", "crecimiento_continuo"], {
-      message: "Elegí el servicio según el manto de tu perro.",
+      message: "Elegí el servicio según el pelo de tu perro.",
     }),
     notes: z.string().trim().optional(),
     logisticsMode: z.enum(["self", "pickup"], { message: "Elegí una opción." }),
@@ -44,11 +45,11 @@ const bookingSchema = z
       });
     }
     if (val.logisticsMode === "pickup") {
-      if (!val.neighborhood) {
+      if (!val.neighborhood || !findBarrio(val.neighborhood)) {
         ctx.addIssue({
           code: "custom",
           path: ["neighborhood"],
-          message: "Indicá tu barrio para calcular el traslado.",
+          message: "Elegí tu barrio de Córdoba capital de la lista.",
         });
       }
       if (!val.pickupAddress) {
@@ -107,7 +108,9 @@ export async function submitBookingAction(
     notes: v.notes || null,
     logisticsMode: v.logisticsMode,
     neighborhood:
-      v.logisticsMode === "pickup" ? (v.neighborhood ?? null) : null,
+      v.logisticsMode === "pickup" && v.neighborhood
+        ? findBarrio(v.neighborhood)
+        : null,
     pickupAddress:
       v.logisticsMode === "pickup" ? (v.pickupAddress ?? null) : null,
     ownerName: v.ownerName,

@@ -4,6 +4,7 @@ import {
   COAT_LABELS,
   SERVICE_PACKAGE_INCLUDES,
   SERVICE_PACKAGE_LABELS,
+  SIZE_EXAMPLES,
   SIZE_LABELS,
   type CoatState,
   type ServicePackageKey,
@@ -57,6 +58,7 @@ export function Step2Dog({ form, errors, setField }: StepFormProps) {
             <SelectableCard
               key={size}
               role="radio"
+              check
               selected={form.sizeBucket === size}
               invalid={!!errors.sizeBucket}
               onClick={() => setField("sizeBucket", size)}
@@ -67,6 +69,9 @@ export function Step2Dog({ form, errors, setField }: StepFormProps) {
               </span>
               <span className="text-ink-soft text-sm tabular-nums">
                 ARS {businessConfig.prices[size].range} · orientativo
+              </span>
+              <span className="text-ink-soft mt-1 text-sm">
+                Ej.: {SIZE_EXAMPLES[size]}
               </span>
             </SelectableCard>
           ))}
@@ -88,7 +93,7 @@ export function Step2Dog({ form, errors, setField }: StepFormProps) {
 
       <fieldset className="m-0 border-0 p-0">
         <legend className="font-heading mb-2 text-[15px] font-semibold">
-          Estado del manto
+          Estado del pelo
         </legend>
         <div className="flex flex-wrap gap-2">
           {COATS.map((coat) => {
@@ -128,6 +133,7 @@ export function Step2Dog({ form, errors, setField }: StepFormProps) {
               <SelectableCard
                 key={pkg}
                 role="radio"
+                check
                 selected={sel}
                 invalid={!!errors.servicePackage}
                 onClick={() => setField("servicePackage", pkg)}
