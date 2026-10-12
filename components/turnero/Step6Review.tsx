@@ -7,19 +7,53 @@ import {
   SIZE_LABELS,
 } from "@/lib/domain/appointment";
 import { formatDurationHM } from "@/lib/domain/datetime";
-import type { WizardForm } from "./types";
+import { businessWhatsAppLink } from "@/lib/domain/whatsapp";
+import type { SubmitError, WizardForm } from "./types";
+
+function SubmitErrorAlert({ error }: { error: SubmitError }) {
+  if (error === "network") {
+    return (
+      <Alert variant="error" title="No pudimos conectarnos">
+        Parece que se cortó tu conexión a internet. Revisala y probá de nuevo;
+        tus datos siguen acá.
+      </Alert>
+    );
+  }
+  if (error === "rate_limited") {
+    return (
+      <Alert variant="error" title="Hiciste muchos intentos seguidos">
+        Esperá unos minutos y volvé a probar. Tus datos siguen acá.
+      </Alert>
+    );
+  }
+  return (
+    <Alert variant="error" title="No pudimos registrar tu solicitud">
+      Tuvimos un problema de nuestro lado. Tus datos siguen acá: probá de nuevo
+      en unos minutos o{" "}
+      <a
+        href={businessWhatsAppLink()}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-bold underline"
+      >
+        escribinos por WhatsApp
+      </a>
+      .
+    </Alert>
+  );
+}
 
 export interface Step6ReviewProps {
   form: WizardForm;
   slotLabel: string;
-  networkError: boolean;
+  submitError: SubmitError | null;
   onEditStep: (step: number) => void;
 }
 
 export function Step6Review({
   form,
   slotLabel,
-  networkError,
+  submitError,
   onEditStep,
 }: Step6ReviewProps) {
   const rows = [
@@ -62,12 +96,7 @@ export function Step6Review({
         Revisá tu solicitud
       </h1>
 
-      {networkError ? (
-        <Alert variant="error" title="No pudimos enviar tu solicitud">
-          Revisá tu conexión y probá de nuevo. Tus datos siguen acá; no hace
-          falta cargarlos otra vez.
-        </Alert>
-      ) : null}
+      {submitError ? <SubmitErrorAlert error={submitError} /> : null}
 
       <div className="border-charcoal rounded-xl border-[1.5px] bg-white px-4.5">
         {rows.map((r, i) => (

@@ -15,6 +15,7 @@ import {
   initialForm,
   STEP_NAMES,
   TOTAL_STEPS,
+  type SubmitError,
   type TakenNotice,
   type WizardFieldErrors,
   type WizardForm,
@@ -36,7 +37,8 @@ interface State {
   form: WizardForm;
   errors: WizardFieldErrors;
   sending: boolean;
-  networkError: boolean;
+  /** Why the last submit failed, when it did not reach a booking. */
+  submitError: SubmitError | null;
   /** Set when the server said somebody else got the chosen turn first. */
   taken: TakenNotice | null;
   successCode: string | null;
@@ -59,7 +61,7 @@ type Action =
       label: string;
       reason: TakenNotice["reason"];
     }
-  | { type: "SUBMIT_NETWORK_ERROR" };
+  | { type: "SUBMIT_ERROR"; error: SubmitError };
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -83,7 +85,7 @@ function reducer(state: State, action: Action): State {
     case "SET_ERRORS":
       return { ...state, errors: action.errors };
     case "SUBMIT_START":
-      return { ...state, sending: true, networkError: false };
+      return { ...state, sending: true, submitError: null };
     case "SUBMIT_SUCCESS":
       return { ...state, sending: false, step: 7, successCode: action.code };
     case "SUBMIT_TAKEN":
@@ -94,8 +96,8 @@ function reducer(state: State, action: Action): State {
         selectedSlotId: null,
         taken: { label: action.label, reason: action.reason },
       };
-    case "SUBMIT_NETWORK_ERROR":
-      return { ...state, sending: false, networkError: true };
+    case "SUBMIT_ERROR":
+      return { ...state, sending: false, submitError: action.error };
     default:
       return state;
   }
@@ -181,7 +183,7 @@ export function TurneroWizard({ slots }: { slots: BookableSlot[] }) {
     form: initialForm,
     errors: {},
     sending: false,
-    networkError: false,
+    submitError: null,
     taken: null,
     successCode: null,
   });
@@ -273,10 +275,14 @@ export function TurneroWizard({ slots }: { slots: BookableSlot[] }) {
           dispatch({ type: "GO_STEP", step: stepForErrors(fieldErrors) });
           dispatch({ type: "SET_ERRORS", errors: fieldErrors });
         } else {
-          dispatch({ type: "SUBMIT_NETWORK_ERROR" });
+          dispatch({
+            type: "SUBMIT_ERROR",
+            error:
+              result.formError === "RATE_LIMITED" ? "rate_limited" : "server",
+          });
         }
       } catch {
-        dispatch({ type: "SUBMIT_NETWORK_ERROR" });
+        dispatch({ type: "SUBMIT_ERROR", error: "network" });
       }
     });
   }
@@ -384,7 +390,7 @@ export function TurneroWizard({ slots }: { slots: BookableSlot[] }) {
           <Step6Review
             form={state.form}
             slotLabel={slotLabel}
-            networkError={state.networkError}
+            submitError={state.submitError}
             onEditStep={goToStep}
           />
         ) : null}
@@ -403,7 +409,7 @@ export function TurneroWizard({ slots }: { slots: BookableSlot[] }) {
           loadingText="Enviando…"
         >
           {state.step === TOTAL_STEPS
-            ? state.networkError
+            ? state.submitError
               ? "Reintentar envío"
               : "Enviar solicitud"
             : "Continuar"}

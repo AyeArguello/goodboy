@@ -60,3 +60,6 @@ export interface TakenNotice {
   label: string;
   reason: "SLOT_TAKEN" | "DAY_FULL";
 }
+
+/** Why the last submit did not become a booking. */
+export type SubmitError = "network" | "server" | "rate_limited";

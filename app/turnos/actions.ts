@@ -140,7 +140,11 @@ export async function submitBookingAction(
     if (result.errorCode === "DAY_FULL") {
       return { ok: false, fieldErrors: {}, formError: "DAY_FULL" };
     }
-    return { ok: false, fieldErrors: {}, formError: "NETWORK" };
+    if (result.errorCode === "RATE_LIMITED") {
+      return { ok: false, fieldErrors: {}, formError: "RATE_LIMITED" };
+    }
+    console.error("Booking failed:", result.errorCode);
+    return { ok: false, fieldErrors: {}, formError: "SERVER" };
   }
 
   // Best-effort: the booking already succeeded, so an email problem must

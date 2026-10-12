@@ -14,6 +14,7 @@ vi.mock("@/lib/notifications/dispatch", () => ({
 }));
 
 const { submitBookingAction } = await import("./actions");
+const { bookAppointment } = await import("@/lib/data/appointments");
 type BookingFormInput = Parameters<typeof submitBookingAction>[0];
 
 const validBase: BookingFormInput = {
@@ -66,6 +67,17 @@ describe("submitBookingAction validation", () => {
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     const result = await submitBookingAction(validBase);
     expect(result).toEqual({ ok: true, code: "GB-TEST" });
+    spy.mockRestore();
+  });
+
+  it("reports a server-side failure as SERVER, not as a connection problem", async () => {
+    vi.mocked(bookAppointment).mockResolvedValueOnce({
+      ok: false,
+      errorCode: "UNKNOWN",
+    });
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const result = await submitBookingAction(validBase);
+    expect(result).toEqual({ ok: false, fieldErrors: {}, formError: "SERVER" });
     spy.mockRestore();
   });
 
