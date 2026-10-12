@@ -15,7 +15,7 @@ import {
   SIZE_LABELS,
   type PaymentMethod,
 } from "@/lib/domain/appointment";
-import { businessConfig } from "@/lib/config/business";
+import { businessConfig, depositAmountFor } from "@/lib/config/business";
 import { googleMapsSearchUrl } from "@/lib/domain/maps";
 import { quoteTransport } from "@/lib/domain/transport";
 import { formatDayLabel, formatTimeLabel } from "@/lib/domain/datetime";
@@ -85,7 +85,7 @@ export function AppointmentDetail({
     text: string;
   } | null>(null);
   const [depositForm, setDepositForm] = useState({
-    amount: String(businessConfig.deposit.amountArs),
+    amount: String(depositAmountFor(appointment.sizeBucket)),
     method: "bank_transfer" as PaymentMethod,
     reference: "",
   });
@@ -169,7 +169,7 @@ export function AppointmentDetail({
             neighborhood: appointment.neighborhood,
             depositAmountArs:
               appointment.latestPayment?.amountArs ??
-              businessConfig.deposit.amountArs,
+              depositAmountFor(appointment.sizeBucket),
             priceRange: businessConfig.prices[appointment.sizeBucket].range,
             cancellationPolicy: businessConfig.cancellationPolicyText,
           }),
@@ -183,11 +183,19 @@ export function AppointmentDetail({
         ownerName: appointment.ownerName,
         dogName: appointment.dogName,
         when,
-        amountArs: businessConfig.deposit.amountArs,
+        amountArs: depositAmountFor(appointment.sizeBucket),
         dueLabel: depositDueAt
           ? `${formatDayLabel(depositDueAt)} · ${formatTimeLabel(depositDueAt)}`
           : `dentro de las próximas ${businessConfig.deposit.dueHours} h`,
         transfer,
+      }),
+    },
+    {
+      label: "Recordatorio de turno",
+      text: adminWhatsAppTemplates.appointmentReminder({
+        ownerName: appointment.ownerName,
+        dogName: appointment.dogName,
+        when,
       }),
     },
     {
@@ -380,7 +388,7 @@ export function AppointmentDetail({
         appointment.status === "awaiting_deposit" ? (
           <ReceiptsPanel
             appointment={appointment}
-            expectedAmountArs={businessConfig.deposit.amountArs}
+            expectedAmountArs={depositAmountFor(appointment.sizeBucket)}
           />
         ) : null}
         <RetentionPanel appointment={appointment} />

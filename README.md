@@ -67,7 +67,7 @@ key`/`service_role key` a las variables de entorno del hosting, y correr `supaba
 
 ## Comprobantes de seña y limpieza automática
 
-La seña (ARS 20.000) se paga **solo por transferencia manual**; no hay Mercado Pago, tarjetas ni
+La seña (50% del monto según tamaño: ARS 15.000 pequeño · 20.000 mediano · 30.000 grande) se paga **solo por transferencia manual**; no hay Mercado Pago, tarjetas ni
 recargos. Flujo: la solicitud queda `pending_review` → la dueña aprueba (`awaiting_deposit`) → el cliente
 recibe un email con los datos y un enlace secreto (`/turnos/comprobante#t=…`, 256 bits, solo se guarda su
 hash) → sube una imagen JPG/PNG/WebP (máx. 5 MB, 1–2 archivos) a un bucket **privado** → la dueña ve el

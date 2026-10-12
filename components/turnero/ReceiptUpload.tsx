@@ -23,9 +23,9 @@ type Context = Extract<ContextActionResult, { ok: true }>;
 
 const ERROR_COPY: Record<string, string> = {
   INVALID_LINK:
-    "Este enlace no es válido o está incompleto. Abrilo de nuevo desde el email que te mandamos.",
+    "Este enlace no es válido o está incompleto. Abrilo de nuevo desde el mensaje que te mandamos.",
   TOKEN_USED:
-    "Ya subiste un comprobante con este enlace. Si hace falta uno nuevo, te mandamos otro enlace por email.",
+    "Ya subiste un comprobante con este enlace. Si hace falta uno nuevo, te mandamos otro enlace por WhatsApp.",
   TOKEN_EXPIRED:
     "El plazo para pagar la seña venció. Escribinos y vemos cómo seguir.",
   NOT_AWAITING_DEPOSIT:
@@ -261,7 +261,7 @@ export function ReceiptUpload() {
           variant="info"
           title="Comprobante recibido, pendiente de verificación"
         >
-          Lo revisamos a mano y te avisamos por email cuando el turno quede
+          Lo revisamos a mano y te avisamos por WhatsApp cuando el turno quede
           confirmado. Hasta entonces, el turno todavía no está confirmado.
         </Alert>
       ) : null}
@@ -290,7 +290,7 @@ export function ReceiptUpload() {
 
       {ctx && ctx.state === "revoked" ? (
         <Alert variant="warning" title="Este enlace ya no es válido">
-          Usá el último email que te mandamos: tiene el enlace vigente.
+          Usá el último mensaje que te mandamos: tiene el enlace vigente.
         </Alert>
       ) : null}
 
@@ -332,7 +332,7 @@ export function ReceiptUpload() {
               </ul>
             ) : (
               <p className="m-0 text-[15px]">
-                Los datos para transferir están en el email que te mandamos.
+                Los datos para transferir están en el mensaje que te mandamos.
               </p>
             )}
           </section>

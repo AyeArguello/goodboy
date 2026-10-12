@@ -31,25 +31,25 @@ const STATUS_COPY: Record<
 > = {
   pending_review: {
     text: () =>
-      "Estamos revisando tu solicitud. Cuando la resolvamos te avisamos por email.",
+      "Estamos revisando tu solicitud. Cuando la resolvamos te avisamos por WhatsApp.",
     ctaLabel: "Escribir por WhatsApp",
     ctaHref: () => businessWhatsAppLink(),
   },
   awaiting_deposit: {
     text: (r) => {
       if (r.receiptState === "pending_verification") {
-        return "Comprobante recibido, pendiente de verificación. Lo revisamos a mano y te avisamos por email cuando el turno quede confirmado.";
+        return "Comprobante recibido, pendiente de verificación. Lo revisamos a mano y te avisamos por WhatsApp cuando el turno quede confirmado.";
       }
       if (r.receiptState === "rejected") {
-        return "No pudimos verificar tu comprobante. Revisá tu email: ahí te contamos el motivo y te dejamos un enlace para subir uno nuevo.";
+        return "No pudimos verificar tu comprobante. Revisá tu WhatsApp: ahí te contamos el motivo y te dejamos un enlace para subir uno nuevo.";
       }
       return (
         `Tu solicitud fue aprobada. Para confirmar el turno transferí la seña de ARS ${r.depositAmountArs.toLocaleString("es-AR")}` +
         (r.depositDueAt ? ` antes del ${whenLabel(r.depositDueAt)}` : "") +
-        " y subí el comprobante con el enlace que te mandamos por email."
+        " y subí el comprobante con el enlace que te mandamos por WhatsApp."
       );
     },
-    ctaLabel: "¿No encontrás el email? Escribinos por WhatsApp",
+    ctaLabel: "¿No encontrás el mensaje? Escribinos por WhatsApp",
     ctaHref: () => businessWhatsAppLink(),
   },
   confirmed: {

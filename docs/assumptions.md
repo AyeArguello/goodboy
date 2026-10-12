@@ -40,7 +40,7 @@ técnica (qué bloquea el build); esa es la vista legal/operativa completa.
   pero no las del cliente (24 h de anticipación, email y consentimientos); el cupo del día y un horario ya
   tomado no se pueden saltear, y un horario quitado o un día bloqueado solo con "Cargar igual".
 - **Días y horarios — grilla por día, no una sola grilla plana:**
-  - Lunes a viernes: horarios de inicio publicables **09:00, 11:30 y 13:30**; cierre 16:00; máximo **3**
+  - Lunes a viernes: horarios de inicio publicables **09:00, 11:30 y 13:30**; cierre 17:00; máximo **3**
     turnos activos por día.
   - **Sábado: un único horario, 11:00, y máximo 1 turno activo.** No es una versión reducida de la grilla
     semanal — cualquier otro horario de sábado, o un segundo turno sabatino, se rechaza en servidor y en

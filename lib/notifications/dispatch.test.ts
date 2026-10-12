@@ -129,6 +129,7 @@ function appointment(over: Row = {}): Row {
     id: "a1",
     code: "GB-ABCD2345",
     dog_name: "Luna",
+    size_bucket: "mediano",
     owner_name: "Carolina",
     email: "carolina@example.com",
     status: "pending_review",
@@ -141,7 +142,11 @@ function appointment(over: Row = {}): Row {
 }
 
 function setup(
-  opts: { owner?: string | null; mailerResults?: SendResult[] } = {},
+  opts: {
+    owner?: string | null;
+    mailerResults?: SendResult[];
+    customerEmails?: boolean;
+  } = {},
 ) {
   const w = makeWorld();
   const sent: EmailMessage[] = [];
@@ -160,6 +165,7 @@ function setup(
     ownerEmail: opts.owner === undefined ? "owner@example.com" : opts.owner,
     transfer: { alias: "good.boy.alias", holder: "Titular Prueba", cbu: null },
     siteUrl: "https://goodboy.test",
+    customerEmails: opts.customerEmails,
   });
   const issueOk: IssueUploadToken & { calls: string[] } = Object.assign(
     vi.fn(async (_id: string, hash: string) => {
@@ -172,6 +178,16 @@ function setup(
 }
 
 describe("requestReceived", () => {
+  it("with customer emails off, only the owner is alerted", async () => {
+    const s = setup({ customerEmails: false });
+    s.tables.appointments!.push(appointment());
+    expect(await s.notifier.requestReceived("a1")).toEqual({
+      customer: "no_recipient",
+      owner: "sent",
+    });
+    expect(s.sent.map((m) => m.to)).toEqual(["owner@example.com"]);
+  });
+
   it("emails the customer and the owner once, and is idempotent", async () => {
     const s = setup();
     s.tables.appointments!.push(appointment());

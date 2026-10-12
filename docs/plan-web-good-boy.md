@@ -27,7 +27,7 @@ La decisión principal es **no construir una agenda totalmente automática**. La
 ### Operación
 
 - Atención: lunes a sábado.
-- Lunes a viernes: horarios de inicio 09:00, 11:30 y 13:30; cierre 16:00.
+- Lunes a viernes: horarios de inicio 09:00, 11:30 y 13:30; cierre 17:00.
 - Sábados: un único turno a las 11:00. No se deben publicar otros horarios ese día.
 - Objetivo: máximo 3 perros por día de lunes a viernes; los sábados, máximo 1.
 - Tiempo de trabajo por perro: aproximadamente 2 h 30 min a 3 h 30 min.
@@ -476,7 +476,7 @@ REGLAS NO NEGOCIABLES
 - No automatizar precio final. Mostrar únicamente rangos orientativos y disclaimer.
 - No ofrecer turnos para el mismo día. Anticipación mínima: 24 h.
 - Máximo 3 turnos activos por fecha de lunes a viernes; máximo 1 los sábados.
-- Horarios de lunes a viernes: 09:00, 11:30 y 13:30; cierre 16:00. La separación de 2 horas entre 11:30 y 13:30 es una excepción aprobada.
+- Horarios de lunes a viernes: 09:00, 11:30 y 13:30; cierre 17:00. La separación de 2 horas entre 11:30 y 13:30 es una excepción aprobada.
 - Horario de sábado: solamente 11:00. La creación, publicación y reserva de cualquier otro horario sabatino debe rechazarse en servidor y base de datos.
 - Solo se pueden solicitar slots publicados por la dueña.
 - Una solicitud ocupa el slot y queda `pending_review`. Si la dueña la aprueba, pasa a `awaiting_deposit`; solo la seña registrada la convierte en `confirmed`.

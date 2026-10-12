@@ -11,7 +11,7 @@ export interface SuccessScreenProps {
   code: string;
   slotLabel: string;
   dogName: string;
-  email: string;
+  depositAmountArs: number;
   whatsAppMessage: string;
   onBackHome: () => void;
 }
@@ -20,7 +20,7 @@ export function SuccessScreen({
   code,
   slotLabel,
   dogName,
-  email,
+  depositAmountArs,
   whatsAppMessage,
   onBackHome,
 }: SuccessScreenProps) {
@@ -60,10 +60,9 @@ export function SuccessScreen({
         </div>
         <p className="text-ink-soft m-0">
           Tu turno todavía no está confirmado. La peluquera revisa cada
-          solicitud y te avisa por email a <strong>{email}</strong>. Si la
-          aprueba, te va a pedir una seña de ARS{" "}
-          {businessConfig.deposit.amountArs.toLocaleString("es-AR")} (se
-          descuenta del total) para confirmarlo.
+          solicitud y te avisa por WhatsApp. Si la aprueba, te va a pedir una
+          seña de ARS {depositAmountArs.toLocaleString("es-AR")} (el 50% del
+          monto según el tamaño; se descuenta del total) para confirmarlo.
         </p>
       </div>
 
@@ -93,9 +92,9 @@ export function SuccessScreen({
 
       <ol className="m-0 flex list-none flex-col gap-3.5 p-0">
         {[
-          "Revisamos tu solicitud y te respondemos por email. Mirá también la carpeta de correo no deseado.",
-          `Si la aprobamos, te mandamos los datos para transferir la seña de ARS ${businessConfig.deposit.amountArs.toLocaleString("es-AR")} y un enlace seguro para subir el comprobante.`,
-          "Verificamos el comprobante a mano. El turno queda confirmado recién cuando lo verificamos, y te avisamos por email.",
+          "Revisamos tu solicitud y te respondemos por WhatsApp.",
+          `Si la aprobamos, te mandamos por WhatsApp los datos para transferir la seña de ARS ${depositAmountArs.toLocaleString("es-AR")}. Cuando transferís, nos mandás el comprobante por ese chat.`,
+          "Verificamos el comprobante. El turno queda confirmado recién cuando lo verificamos, y te avisamos por WhatsApp.",
           "El día del turno evaluamos a tu perro y confirmamos el precio final — la seña se descuenta del total.",
         ].map((text, i) => (
           <li key={i} className="grid grid-cols-[32px_1fr] gap-3">

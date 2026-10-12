@@ -2,7 +2,7 @@
 
 import { LegalDialogs } from "@/components/legal/LegalDialogs";
 import { SelectableCard } from "@/components/ui/SelectableCard";
-import { businessConfig } from "@/lib/config/business";
+import { businessConfig, depositAmountFor } from "@/lib/config/business";
 import type { StepFormProps } from "./Step2Dog";
 
 function CheckIcon() {
@@ -24,6 +24,9 @@ function CheckIcon() {
 }
 
 export function Step5Consent({ form, errors, setField }: StepFormProps) {
+  const depositText = form.sizeBucket
+    ? `ARS ${depositAmountFor(form.sizeBucket).toLocaleString("es-AR")}`
+    : "el 50% del monto según el tamaño";
   const consents = [
     {
       key: "consentPrice" as const,
@@ -33,9 +36,7 @@ export function Step5Consent({ form, errors, setField }: StepFormProps) {
     {
       key: "consentDeposit" as const,
       title: "Seña y cancelación",
-      text: `Entiendo que para confirmar el turno se pide una seña de ARS ${businessConfig.deposit.amountArs.toLocaleString(
-        "es-AR",
-      )} por transferencia (se descuenta del total), que debo subir el comprobante y que el turno queda confirmado recién cuando Good Boy lo verifica. ${businessConfig.cancellationPolicyText}`,
+      text: `Entiendo que para confirmar el turno se pide una seña de ${depositText} por transferencia (el 50% del monto según el tamaño; se descuenta del total), que debo mandar el comprobante por WhatsApp y que el turno queda confirmado recién cuando Good Boy lo verifica. ${businessConfig.cancellationPolicyText}`,
     },
     {
       key: "consentPrivacy" as const,

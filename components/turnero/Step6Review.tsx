@@ -1,6 +1,6 @@
 import { quoteTransport } from "@/lib/domain/transport";
 import { Alert } from "@/components/ui/Alert";
-import { businessConfig } from "@/lib/config/business";
+import { businessConfig, depositAmountFor } from "@/lib/config/business";
 import {
   COAT_LABELS,
   SERVICE_PACKAGE_LABELS,
@@ -51,7 +51,7 @@ export function Step6Review({
     },
     {
       label: "Responsable",
-      value: `${form.ownerName} · +54 ${form.phone} · ${form.email}`,
+      value: `${form.ownerName} · +54 ${form.phone}`,
       step: 4,
     },
   ];
@@ -113,9 +113,12 @@ export function Step6Review({
         <p className="m-0 text-base">
           <strong>Todavía no es un turno confirmado.</strong> Al enviar, tu
           solicitud queda pendiente de revisión y no se paga nada ahora. Si la
-          aprobamos, te escribimos por email con los datos para transferir una
-          seña de ARS {businessConfig.deposit.amountArs.toLocaleString("es-AR")}{" "}
-          (se descuenta del total) y un enlace seguro para subir el comprobante.
+          aprobamos, te escribimos por WhatsApp con los datos para transferir
+          una seña de ARS{" "}
+          {form.sizeBucket
+            ? depositAmountFor(form.sizeBucket).toLocaleString("es-AR")
+            : "—"}{" "}
+          (el 50% del monto según el tamaño; se descuenta del total).
         </p>
       </div>
     </section>

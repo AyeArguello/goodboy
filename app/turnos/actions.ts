@@ -25,12 +25,15 @@ const bookingSchema = z
     pickupAddress: z.string().trim().optional(),
     ownerName: z.string().trim().min(1, "Escribí tu nombre."),
     phone: z.string().trim(),
+    // Not asked in the form any more (WhatsApp is the channel); kept optional.
     email: z
       .string()
       .trim()
-      .min(1, "Escribí tu correo: ahí te mandamos las novedades de tu turno.")
-      .email("Revisá el correo: parece que le falta algo.")
-      .max(254, "Correo inválido."),
+      .max(254, "Correo inválido.")
+      .refine((value) => value === "" || z.email().safeParse(value).success, {
+        message: "Revisá el correo: parece que le falta algo.",
+      })
+      .optional(),
     consentPrice: z.boolean(),
     consentDeposit: z.boolean(),
     consentPrivacy: z.boolean(),
@@ -115,7 +118,7 @@ export async function submitBookingAction(
       v.logisticsMode === "pickup" ? (v.pickupAddress ?? null) : null,
     ownerName: v.ownerName,
     phoneE164: phone.e164,
-    email: v.email,
+    email: v.email || null,
     consents: CONSENT_KEYS.map((key) => ({
       key,
       version: CONSENT_TEXT_VERSION,

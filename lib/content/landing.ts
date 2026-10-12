@@ -1,4 +1,4 @@
-import { businessConfig } from "@/lib/config/business";
+import { businessConfig, depositRuleText } from "@/lib/config/business";
 import {
   SERVICE_PACKAGE_INCLUDES,
   SERVICE_PACKAGE_LABELS,
@@ -71,12 +71,12 @@ export const howItWorksSteps = [
   {
     n: "3",
     title: "Te aprobamos y pedimos la seña",
-    text: `Si la peluquera aprueba tu solicitud, te mandamos por email los datos para transferir la seña de ARS ${businessConfig.deposit.amountArs.toLocaleString("es-AR")} (se descuenta del total) y un enlace seguro para subir el comprobante.`,
+    text: `Si la peluquera aprueba tu solicitud, te mandamos por WhatsApp los datos para transferir la seña (${depositRuleText()}; se descuenta del total) y después nos mandás el comprobante por ese mismo chat.`,
   },
   {
     n: "4",
     title: "Subís el comprobante y queda confirmado",
-    text: "Transferís la seña y subís una foto del comprobante. Lo verificamos a mano: el turno se confirma recién cuando lo verificamos, y te avisamos por email.",
+    text: "Transferís la seña y nos mandás una foto del comprobante por WhatsApp. Lo verificamos a mano: el turno se confirma recién cuando lo verificamos, y te avisamos por WhatsApp.",
   },
   {
     n: "5",
@@ -109,8 +109,8 @@ export function faqs(): { question: string; answer: string }[] {
     {
       question: "¿Cuándo queda confirmado mi turno?",
       answer:
-        "Primero la peluquera revisa y aprueba tu solicitud. Después te pedimos una seña de ARS " +
-        `${businessConfig.deposit.amountArs.toLocaleString("es-AR")} (se descuenta del total) — el turno queda confirmado recién cuando la registramos.`,
+        "Primero la peluquera revisa y aprueba tu solicitud. Después te pedimos una seña de " +
+        `${depositRuleText()} (se descuenta del total) — el turno queda confirmado recién cuando la registramos.`,
     },
     {
       question: "¿Cuánto dura el turno?",
@@ -133,7 +133,7 @@ export function faqs(): { question: string; answer: string }[] {
     {
       question: "¿Cómo se paga la seña?",
       answer:
-        "Por transferencia bancaria, sin recargo. Cuando aprobamos tu solicitud te mandamos por email los datos para transferir y un enlace para subir el comprobante. Lo verificamos a mano y te avisamos por email cuando el turno queda confirmado.",
+        "Por transferencia bancaria, sin recargo. Cuando aprobamos tu solicitud te mandamos por WhatsApp los datos para transferir. Lo verificamos a mano y te avisamos por WhatsApp cuando el turno queda confirmado.",
     },
     {
       question: "¿Qué pasa si necesito cancelar?",

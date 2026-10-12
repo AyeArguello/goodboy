@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { businessConfig } from "@/lib/config/business";
+import { businessConfig, depositRuleText } from "@/lib/config/business";
 
 /** The body of the booking terms, shared by the page and the in-flow dialog. */
 export function TermsContent({
@@ -26,30 +26,29 @@ export function TermsContent({
           </li>
           <li>
             Toda solicitud queda pendiente de revisión hasta que la peluquera la
-            aprueba. Te avisamos por email.
+            aprueba. Te avisamos por WhatsApp.
           </li>
           <li>
-            Para confirmar un turno aprobado se requiere una seña de ARS{" "}
-            {businessConfig.deposit.amountArs.toLocaleString("es-AR")}, que se
-            descuenta del total del servicio.
+            Para confirmar un turno aprobado se requiere una seña de{" "}
+            {depositRuleText()}, que se descuenta del total del servicio.
           </li>
           <li>
             La seña se paga únicamente por transferencia bancaria. Cuando
-            aprobamos tu solicitud te mandamos por email los datos para
-            transferir y un enlace personal para subir una foto o captura del
-            comprobante. El plazo general es de{" "}
+            aprobamos tu solicitud te mandamos por WhatsApp los datos para
+            transferir; después nos enviás una foto o captura del comprobante
+            por ese mismo chat. El plazo general es de{" "}
             {businessConfig.deposit.dueHours} h desde la aprobación; si el turno
             está próximo, se aplica el vencimiento anterior indicado por el
             sistema.
           </li>
           <li>
             Verificamos cada comprobante a mano. El turno queda confirmado
-            recién cuando lo verificamos y te avisamos por email; subir el
+            recién cuando lo verificamos y te avisamos por WhatsApp; enviar el
             comprobante no lo confirma por sí solo.
           </li>
           <li>
             Si no podemos verificar el comprobante, te explicamos el motivo por
-            email y podés subir uno nuevo dentro del plazo.
+            WhatsApp y podés mandar uno nuevo dentro del plazo.
           </li>
           <li>
             Si el plazo vence sin un comprobante válido, la solicitud vence y el

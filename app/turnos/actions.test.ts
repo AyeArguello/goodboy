@@ -37,15 +37,22 @@ describe("submitBookingAction validation", () => {
     if (!result.ok) expect(result.fieldErrors.dogName).toBeTruthy();
   });
 
-  it.each([
-    ["", "correo"],
-    ["   ", "correo"],
-    ["no-es-un-correo", "correo"],
-  ])("requires a valid email (%j)", async (email) => {
-    const result = await submitBookingAction({ ...validBase, email });
+  it("rejects an email that is filled in but malformed", async () => {
+    const result = await submitBookingAction({
+      ...validBase,
+      email: "no-es-un-correo",
+    });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.fieldErrors.email).toContain("correo");
   });
+
+  it.each([[""], ["   "]])(
+    "accepts a booking without email (%j): WhatsApp is the contact channel",
+    async (email) => {
+      const result = await submitBookingAction({ ...validBase, email });
+      expect(result).toEqual({ ok: true, code: "GB-TEST" });
+    },
+  );
 
   it("sends the request notifications through the outbox after a successful booking", async () => {
     requestReceived.mockClear();

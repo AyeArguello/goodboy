@@ -45,7 +45,9 @@ describe("adminWhatsAppTemplates", () => {
         neighborhood: "Jardín",
         amount: "ARS 5.000–8.000",
       }),
-    ).toBe("El traslado desde Jardín es de ARS 5.000–8.000, ida y vuelta.");
+    ).toBe(
+      "🚗 El traslado desde Jardín es de *ARS 5.000–8.000*, ida y vuelta.",
+    );
   });
 
   const approval = {
@@ -107,10 +109,10 @@ describe("depositConfirmationMessage", () => {
     expect(msg).toContain("Luna");
     expect(msg).toContain("viernes 25 sep · 9:00");
     expect(msg).toContain("lo traés vos");
-    expect(msg).toContain("Seña recibida: ARS 20.000");
+    expect(msg).toContain("✅ *Seña recibida: ARS 20.000*");
     expect(msg).toContain("Saldo:");
     expect(msg).toContain("40.000–50.000");
-    expect(msg).toContain("Cancelación: Si cancelás con menos de 48 h");
+    expect(msg).toContain("📌 Cancelación: Si cancelás con menos de 48 h");
   });
 
   it("describes pickup with the neighborhood and the transport cost caveat", () => {

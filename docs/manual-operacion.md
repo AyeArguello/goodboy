@@ -23,7 +23,7 @@ Este es el flujo más importante — un turno **nunca queda confirmado sin la se
 3. Si te sirve, tocá **"Aprobar y pedir seña"**. Esto le abre un plazo al cliente (por defecto 24 h) para
    pagar.
 4. Tocá el mensaje de WhatsApp **"Aprobar e indicar seña"** — se abre WhatsApp con el texto de la seña de
-   ARS 20.000 ya escrito. Ahí le pasás manualmente los datos de transferencia o el link de Mercado Pago.
+   el monto de seña según el tamaño (15.000 / 20.000 / 30.000) ya escrito. Ahí le pasás manualmente los datos de transferencia o el link de Mercado Pago.
 5. Cuando el cliente te confirme que pagó, volvé a la ficha (ahora en la pestaña **"Esperando seña"**) y
    completá el formulario **"Registrar seña recibida"**: monto, medio de pago (efectivo / transferencia /
    Mercado Pago) y una referencia si tenés. Tocá **"Confirmar seña recibida"**.

@@ -1,4 +1,4 @@
-import { businessConfig } from "@/lib/config/business";
+import { businessConfig, depositRuleText } from "@/lib/config/business";
 import { businessWhatsAppLink } from "@/lib/domain/whatsapp";
 
 /** The body of the privacy policy, shared by the page and the in-flow dialog. */
@@ -16,23 +16,21 @@ export function PrivacyContent({
       </p>
       <p className="text-ink-soft">
         En resumen (sujeto al texto final): los datos que dejás al pedir un
-        turno (nombre, WhatsApp, correo y datos de tu perro) se usan solo para
-        gestionar esa solicitud. No se venden ni se comparten con fines
-        publicitarios; los proveedores técnicos indicados más abajo los procesan
-        únicamente para prestar el servicio.
+        turno (nombre, WhatsApp y datos de tu perro) se usan solo para gestionar
+        esa solicitud. No se venden ni se comparten con fines publicitarios; los
+        proveedores técnicos indicados más abajo los procesan únicamente para
+        prestar el servicio.
       </p>
 
-      <section aria-labelledby="correo" className="flex flex-col gap-2">
-        <H id="correo" className="font-heading m-0 text-xl font-bold">
-          Tu correo
+      <section aria-labelledby="contacto" className="flex flex-col gap-2">
+        <H id="contacto" className="font-heading m-0 text-xl font-bold">
+          Cómo nos comunicamos
         </H>
         <p className="text-ink-soft m-0">
-          El correo es obligatorio porque es nuestro canal automático de aviso:
-          te escribimos cuando recibimos tu solicitud, cuando la aprobamos (con
-          los datos para la seña), cuando recibimos o rechazamos tu comprobante,
-          y cuando el turno se confirma, se cancela o se reprograma, o si
-          registramos una devolución. Para enviarlos usamos un proveedor de
-          envío de emails.
+          Te escribimos por WhatsApp para avisarte cuando aprobamos tu
+          solicitud, pedirte la seña y confirmar, cancelar o reprogramar el
+          turno. No te enviamos correos: el correo solo se usa internamente para
+          avisar a la peluquera de cada solicitud nueva.
         </p>
       </section>
 
@@ -55,9 +53,8 @@ export function PrivacyContent({
         </H>
         <ul className="text-ink-soft m-0 flex list-disc flex-col gap-1.5 pl-5">
           <li>
-            <strong>Para qué:</strong> verificar a mano que recibimos la seña de
-            ARS {businessConfig.deposit.amountArs.toLocaleString("es-AR")} por
-            transferencia, y así confirmar tu turno.
+            <strong>Para qué:</strong> verificar a mano que recibimos la seña (
+            {depositRuleText()}) por transferencia, y así confirmar tu turno.
           </li>
           <li>
             <strong>Qué guardamos:</strong> la imagen que subís (JPG, PNG o
@@ -102,8 +99,9 @@ export function PrivacyContent({
         </H>
         <p className="text-ink-soft m-0">
           Usamos Supabase para la base de datos y el almacenamiento privado de
-          los comprobantes, y Resend para enviar los emails. Estos proveedores
-          pueden procesar datos en servidores fuera de Argentina.
+          los comprobantes, y Resend para enviar a la peluquera los avisos
+          internos por correo. Estos proveedores pueden procesar datos en
+          servidores fuera de Argentina.
         </p>
       </section>
 
@@ -123,8 +121,9 @@ export function PrivacyContent({
           >
             WhatsApp
           </a>{" "}
-          o respondiendo cualquiera de nuestros emails. Si hay un reclamo o una
-          devolución en curso, podemos conservar lo necesario hasta resolverlo.
+          o respondiendo cualquiera de nuestros mensajes. Si hay un reclamo o
+          una devolución en curso, podemos conservar lo necesario hasta
+          resolverlo.
         </p>
       </section>
     </>

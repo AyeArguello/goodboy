@@ -1,6 +1,11 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { businessConfig, siteUrl as getSiteUrl } from "@/lib/config/business";
+import {
+  businessConfig,
+  depositAmountFor,
+  siteUrl as getSiteUrl,
+  type DepositSize,
+} from "@/lib/config/business";
 import { formatDayLabel, formatTimeLabel } from "@/lib/domain/datetime";
 import { businessWhatsAppLink } from "@/lib/domain/whatsapp";
 import { getServerEnv } from "@/lib/env/server";
@@ -43,6 +48,8 @@ export interface DispatchDeps {
   ownerEmail: string | null;
   transfer: TransferDetails;
   siteUrl: string;
+  /** Emails addressed to the customer. Defaults to on; production turns it off. */
+  customerEmails?: boolean;
 }
 
 export type Outcome = SendOutcome | "obsolete" | "no_recipient";
@@ -71,6 +78,7 @@ interface AppointmentCtx {
   dogName: string;
   ownerName: string;
   email: string | null;
+  sizeBucket: DepositSize | null;
   status: string;
   depositDueAt: Date | null;
   closedAt: Date | null;
@@ -99,7 +107,7 @@ async function loadAppointment(
     client
       .from("appointments")
       .select(
-        "id, code, dog_name, owner_name, email, status, deposit_due_at, closed_at, logistics_mode, availability_slots(starts_at)",
+        "id, code, dog_name, owner_name, email, size_bucket, status, deposit_due_at, closed_at, logistics_mode, availability_slots(starts_at)",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -113,6 +121,7 @@ async function loadAppointment(
     dogName: row.dog_name as string,
     ownerName: row.owner_name as string,
     email: (row.email as string | null) || null,
+    sizeBucket: (row.size_bucket as DepositSize | null) ?? null,
     status: row.status as string,
     depositDueAt: row.deposit_due_at
       ? new Date(row.deposit_due_at as string)
@@ -123,7 +132,12 @@ async function loadAppointment(
   };
 }
 
-async function loadDepositAmount(client: DispatchClient): Promise<number> {
+async function loadDepositAmount(
+  client: DispatchClient,
+  sizeBucket: DepositSize | null,
+): Promise<number> {
+  // The deposit is 50% of the price by dog size (see businessConfig.deposit).
+  if (sizeBucket) return depositAmountFor(sizeBucket);
   const row = await one(
     client
       .from("business_settings")
@@ -131,7 +145,9 @@ async function loadDepositAmount(client: DispatchClient): Promise<number> {
       .eq("id", true)
       .maybeSingle(),
   );
-  return Number(row?.deposit_amount_ars ?? businessConfig.deposit.amountArs);
+  return Number(
+    row?.deposit_amount_ars ?? businessConfig.deposit.bySize.mediano,
+  );
 }
 
 export function createNotifier(deps: DispatchDeps) {
@@ -159,6 +175,7 @@ export function createNotifier(deps: DispatchDeps) {
     opts: NotifyOpts | undefined,
     render: () => RenderedEmail | Promise<RenderedEmail>,
   ): Promise<Outcome> {
+    if (deps.customerEmails === false) return "no_recipient";
     if (!a.email) return "no_recipient";
     if (opts?.onlyKey && opts.onlyKey !== key) return "obsolete";
     return sendOnce(
@@ -232,7 +249,7 @@ export function createNotifier(deps: DispatchDeps) {
           return OBSOLETE;
         const due = a.depositDueAt;
         const key = `request_approved:${a.id}:${epoch(due)}${opts?.resend ? `:resend:${Date.now()}` : ""}`;
-        const amount = await loadDepositAmount(client);
+        const amount = await loadDepositAmount(client, a.sizeBucket);
         const customer = await toCustomer(
           a,
           "request_approved",
@@ -610,5 +627,7 @@ export function getNotifier(): Notifier {
       cbu: env.DEPOSIT_TRANSFER_CBU ?? null,
     },
     siteUrl: getSiteUrl(),
+    // The business talks to customers over WhatsApp; email only alerts the owner.
+    customerEmails: false,
   });
 }

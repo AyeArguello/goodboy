@@ -25,11 +25,14 @@ export function customerSummaryMessage(input: {
   code: string;
 }): string {
   return [
-    `Hola, les mando el resumen de mi solicitud (${input.code}).`,
-    `Perro: ${input.dogName}`,
-    `Turno: ${input.slotLabel}`,
-    "Adjunto una foto reciente.",
-  ].join("\n");
+    "Hola 👋 les mando el resumen de mi solicitud de turno:",
+    [
+      `• 🔖 Código: ${input.code}`,
+      `• 🐶 Perro: ${input.dogName}`,
+      `• 📅 Turno: ${input.slotLabel}`,
+    ].join("\n"),
+    "Adjunto una foto reciente 📸",
+  ].join("\n\n");
 }
 
 /**
@@ -48,16 +51,20 @@ export function depositConfirmationMessage(input: {
   priceRange: string;
   cancellationPolicy: string;
 }): string {
-  return [
-    `Hola ${input.ownerName}, confirmamos el turno de ${input.dogName}.`,
-    `Cuándo: ${input.when}`,
+  const details = [
+    `• 📅 Cuándo: ${input.when}`,
     input.pickup
-      ? `Modalidad: lo buscamos${input.neighborhood ? ` (${input.neighborhood})` : ""}; el costo del traslado se confirma según el barrio.`
-      : "Modalidad: lo traés vos al local.",
-    `Seña recibida: ARS ${input.depositAmountArs.toLocaleString("es-AR")}.`,
-    `Saldo: se confirma el día del turno al evaluar a ${input.dogName} (precio orientativo ARS ${input.priceRange}, menos la seña).`,
-    `Cancelación: ${input.cancellationPolicy}`,
-  ].join("\n");
+      ? `• 🚗 Modalidad: lo buscamos${input.neighborhood ? ` (${input.neighborhood})` : ""}; el costo del traslado se confirma según el barrio.`
+      : "• 🏠 Modalidad: lo traés vos al local.",
+    `• ✅ *Seña recibida: ARS ${input.depositAmountArs.toLocaleString("es-AR")}*`,
+    `• 💰 Saldo: se confirma el día del turno al evaluar a ${input.dogName} (precio orientativo ARS ${input.priceRange}, menos la seña).`,
+  ];
+  return [
+    `Hola ${input.ownerName} 👋 ¡confirmamos el turno de ${input.dogName}! 🐶`,
+    details.join("\n"),
+    `📌 Cancelación: ${input.cancellationPolicy}`,
+    "¡Nos vemos pronto! 🐾",
+  ].join("\n\n");
 }
 
 /**
@@ -79,25 +86,50 @@ export const adminWhatsAppTemplates = {
     };
   }) => {
     const transferLines = [
-      input.transfer.alias && `Alias: ${input.transfer.alias}`,
-      input.transfer.holder && `Titular: ${input.transfer.holder}`,
-      input.transfer.cbu && `CBU/CVU: ${input.transfer.cbu}`,
+      input.transfer.alias && `• Alias: ${input.transfer.alias}`,
+      input.transfer.holder && `• Titular: ${input.transfer.holder}`,
+      input.transfer.cbu && `• CBU/CVU: ${input.transfer.cbu}`,
     ].filter((line): line is string => Boolean(line));
     return [
-      `Hola ${input.ownerName}, aprobamos el turno de ${input.dogName}: ${input.when}.`,
-      `Para confirmarlo necesitamos una seña de ARS ${input.amountArs.toLocaleString("es-AR")} por transferencia (se descuenta del total), hasta el ${input.dueLabel}.`,
+      `Hola ${input.ownerName} 👋 ¡aprobamos el turno de ${input.dogName}! 🐶`,
+      [
+        `• 📅 Cuándo: ${input.when}`,
+        `• 💸 Seña por transferencia: *ARS ${input.amountArs.toLocaleString("es-AR")}* (se descuenta del total)`,
+        `• ⏰ Plazo: hasta el ${input.dueLabel}`,
+      ].join("\n"),
       transferLines.length > 0
-        ? ["Datos para transferir:", ...transferLines].join("\n")
-        : "Datos para transferir: [completar]",
-      "Cuando transfieras, mandanos el comprobante por este chat y te confirmamos el turno.",
+        ? ["🏦 *Datos para transferir*", ...transferLines].join("\n")
+        : "🏦 *Datos para transferir:* [completar]",
+      "Cuando transfieras, mandanos el comprobante por este chat y te confirmamos el turno ✅",
     ].join("\n\n");
   },
+  /** Reminder for a booked turn, e.g. for clients who booked days ahead. */
+  appointmentReminder: (input: {
+    ownerName: string;
+    dogName: string;
+    when: string;
+  }) =>
+    [
+      `Hola ${input.ownerName} 👋 te recuerdo que el turno de ${input.dogName} 🐶 está confirmado:`,
+      `• 📅 ${input.when}`,
+      "¡Nos vemos pronto! 🐾",
+    ].join("\n\n"),
   askForPhoto: (input: { ownerName: string; dogName: string }) =>
-    `Hola ${input.ownerName}, ¿me mandás una foto reciente de ${input.dogName}?`,
+    [
+      `Hola ${input.ownerName} 👋`,
+      `¿Me mandás una foto reciente de ${input.dogName}? 📸 Nos ayuda a prepararnos para el turno 🐶`,
+    ].join("\n\n"),
   proposeNewTime: (input: { ownerName: string }) =>
-    `Hola ${input.ownerName}, ese horario no me queda. ¿Te sirve [día y hora]?`,
+    [
+      `Hola ${input.ownerName} 👋`,
+      "Ese horario no me queda 😅 ¿Te sirve [día y hora]? 📅",
+    ].join("\n\n"),
   confirmTransportCost: (input: { neighborhood: string; amount?: string }) =>
-    `El traslado desde ${input.neighborhood || "tu barrio"} es de ${input.amount ?? "ARS [monto]"}, ida y vuelta.`,
+    `🚗 El traslado desde ${input.neighborhood || "tu barrio"} es de *${input.amount ?? "ARS [monto]"}*, ida y vuelta.`,
   depositForfeited: (input: { ownerName: string; dogName: string }) =>
-    `Hola ${input.ownerName}, como el turno de ${input.dogName} se canceló sin una reprogramación válida dentro del mismo mes, la seña no se reintegra. Cualquier duda, escribinos.`,
+    [
+      `Hola ${input.ownerName} 👋`,
+      `Como el turno de ${input.dogName} se canceló sin una reprogramación válida dentro del mismo mes, la seña no se reintegra.`,
+      "Cualquier duda, escribinos 🙌",
+    ].join("\n\n"),
 };

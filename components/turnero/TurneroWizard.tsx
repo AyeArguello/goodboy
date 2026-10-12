@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useReducer, useState, useTransition } from "react";
+import { useEffect, useMemo, useReducer, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Stepper } from "@/components/ui/Stepper";
 import { Button } from "@/components/ui/Button";
@@ -9,7 +9,7 @@ import {
   submitBookingAction,
   type BookingFormInput,
 } from "@/app/turnos/actions";
-import { businessConfig } from "@/lib/config/business";
+import { businessConfig, depositAmountFor } from "@/lib/config/business";
 import { customerSummaryMessage } from "@/lib/domain/whatsapp";
 import {
   initialForm,
@@ -118,7 +118,7 @@ function stepForErrors(errors: WizardFieldErrors): number {
       ],
     ],
     [3, ["logisticsMode", "neighborhood", "pickupAddress"]],
-    [4, ["ownerName", "phone", "email"]],
+    [4, ["ownerName", "phone"]],
     [5, ["consentPrice", "consentDeposit", "consentPrivacy", "consent"]],
   ];
   const found = owners.find(([, keys]) => keys.some((k) => errors[k]));
@@ -150,13 +150,6 @@ function validateStep(step: number, state: State): WizardFieldErrors {
     if (form.phone.replace(/\D/g, "").length !== 10) {
       errors.phone =
         "Revisá el número: necesitamos código de área y número (10 dígitos).";
-    }
-    const email = form.email.trim();
-    if (!email) {
-      errors.email =
-        "Escribí tu correo: ahí te mandamos las novedades de tu turno.";
-    } else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-      errors.email = "Revisá el correo: parece que le falta algo.";
     }
   }
   if (
@@ -192,6 +185,12 @@ export function TurneroWizard({ slots }: { slots: BookableSlot[] }) {
     taken: null,
     successCode: null,
   });
+
+  // Each step is a new "page": start it from the top, not wherever the
+  // previous (longer) step left the scroll.
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [state.step]);
 
   const selectedDay = days.find((d) => d.dateKey === state.selectedDateKey);
   const selectedSlot = selectedDay?.slots.find(
@@ -246,7 +245,6 @@ export function TurneroWizard({ slots }: { slots: BookableSlot[] }) {
       pickupAddress: state.form.pickupAddress || undefined,
       ownerName: state.form.ownerName,
       phone: state.form.phone,
-      email: state.form.email.trim(),
       consentPrice: state.form.consentPrice,
       consentDeposit: state.form.consentDeposit,
       consentPrivacy: state.form.consentPrivacy,
@@ -289,7 +287,10 @@ export function TurneroWizard({ slots }: { slots: BookableSlot[] }) {
         code={state.successCode}
         slotLabel={slotLabel}
         dogName={state.form.dogName}
-        email={state.form.email.trim()}
+        depositAmountArs={depositAmountFor(
+          (state.form.sizeBucket || "mediano") as
+            "pequeno" | "mediano" | "grande",
+        )}
         whatsAppMessage={customerSummaryMessage({
           dogName: state.form.dogName,
           slotLabel,

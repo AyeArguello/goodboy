@@ -185,10 +185,11 @@ export interface ConsentRecord {
 }
 
 /**
- * Bumped for v3: the deposit is a manual bank transfer confirmed after the
+ * v4: the deposit is 50% of the price by dog size and the receipt travels by
+ * WhatsApp. Bumped for v3: the deposit is a manual bank transfer confirmed after the
  * client uploads a receipt, and the privacy consent mentions the receipt.
  */
-export const CONSENT_TEXT_VERSION = 3;
+export const CONSENT_TEXT_VERSION = 4;
 
 /** Known error codes raised by request_appointment / admin RPCs (see supabase/migrations). */
 export type BookingErrorCode =

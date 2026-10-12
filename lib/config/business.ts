@@ -37,7 +37,7 @@ export const businessConfig = {
   whatsappNumberE164: "+5493512722097",
   instagramUrl: "https://www.instagram.com/goodboy.peluca/",
   businessHoursText:
-    "Lunes a viernes, turnos a las 9:00, 11:30 y 13:30 (cierre 16:00) · Sábados, único turno a las 11:00",
+    "Lunes a viernes, turnos a las 9:00, 11:30 y 13:30 (cierre 17:00) · Sábados, único turno a las 11:00",
   cancellationPolicyText:
     "Si cancelás con 48 h o más de anticipación, podés reprogramar para otra fecha dentro del mismo mes y conservar la seña. Si no reprogramás dentro de ese período, o cancelás con menos de 48 h, la seña no se reintegra.",
   businessCancellationPolicyText: envOr(
@@ -63,7 +63,8 @@ export const businessConfig = {
       "Servicio sujeto a cobertura y condiciones de seguridad. Confirmamos tu dirección por WhatsApp antes del turno.",
   },
   deposit: {
-    amountArs: 20000,
+    /** Half of the lower bound of each size's price range (owner request, 2026-10-12). Keep in sync with the DB column business_settings.deposit_amounts_ars. */
+    bySize: { pequeno: 15000, mediano: 20000, grande: 30000 },
     /** Confirmed by the owner on 2026-10-04. */
     dueHours: 24,
     dueHoursConfirmed: true,
@@ -105,7 +106,7 @@ export const businessConfig = {
     warnGapMinutes: 150,
     serviceDurationMinMinutes: 150,
     serviceDurationMaxMinutes: 210,
-    closingTime: "16:00",
+    closingTime: "17:00",
     codeAlphabet: "23456789ABCDEFGHJKLMNPQRSTUVWXYZ", // sin 0/O/1/I
     codePrefix: "GB-",
     /** Raised from 4→8 chars (auditoría: 4 chars ≈ 20 bits was too guessable). */
@@ -113,6 +114,21 @@ export const businessConfig = {
   },
   socialProofSameAs: ["https://www.instagram.com/goodboy.peluca/"] as string[],
 } as const;
+
+export type DepositSize = keyof typeof businessConfig.deposit.bySize;
+
+/** Deposit (seña) for a dog size: 50% of the lower bound of the price range. */
+export function depositAmountFor(size: DepositSize): number {
+  return businessConfig.deposit.bySize[size];
+}
+
+const arsLabel = (n: number) => n.toLocaleString("es-AR");
+
+/** Public wording of the rule, for text that is not tied to one dog. */
+export function depositRuleText(): string {
+  const { bySize } = businessConfig.deposit;
+  return `el 50% del monto según el tamaño (Pequeño ARS ${arsLabel(bySize.pequeno)} · Mediano ARS ${arsLabel(bySize.mediano)} · Grande ARS ${arsLabel(bySize.grande)})`;
+}
 
 export function siteUrl(): string {
   return getPublicEnv().NEXT_PUBLIC_SITE_URL;
