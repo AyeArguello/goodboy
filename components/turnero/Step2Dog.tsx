@@ -1,4 +1,5 @@
 import { TextField, TextAreaField } from "@/components/ui/Field";
+import { Alert } from "@/components/ui/Alert";
 import { SelectableCard } from "@/components/ui/SelectableCard";
 import {
   COAT_LABELS,
@@ -90,6 +91,10 @@ export function Step2Dog({ form, errors, setField }: StepFormProps) {
         value={form.breed}
         onChange={(e) => setField("breed", e.target.value)}
       />
+
+      <Alert variant="error" title="Aviso importante">
+        La peluquera no trabaja con perros de la raza Chow Chow.
+      </Alert>
 
       <fieldset className="m-0 border-0 p-0">
         <legend className="font-heading mb-2 text-[15px] font-semibold">
