@@ -66,7 +66,9 @@ export function TodayList({
             startsAt.getTime() +
               businessConfig.rules.serviceDurationMaxMinutes * 60_000,
           );
-          const isPickup = a.logisticsMode === "pickup";
+          // Collected by us (full pickup or pickup-only): the "salgo / listo" flow applies.
+          const isPickup =
+            a.logisticsMode === "pickup" || a.logisticsMode === "pickup_only";
           return (
             <li
               key={a.id}

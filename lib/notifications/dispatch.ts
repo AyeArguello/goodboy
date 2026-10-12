@@ -127,7 +127,8 @@ async function loadAppointment(
       ? new Date(row.deposit_due_at as string)
       : null,
     closedAt: row.closed_at ? new Date(row.closed_at as string) : null,
-    pickup: row.logistics_mode === "pickup",
+    pickup:
+      row.logistics_mode === "pickup" || row.logistics_mode === "pickup_only",
     startsAt: new Date(slot.starts_at),
   };
 }

@@ -9,6 +9,8 @@ import {
   SERVICE_PACKAGE_LABELS,
   SIZE_LABELS,
   receiptDisplay,
+  needsTransport,
+  LOGISTICS_LABELS,
 } from "@/lib/domain/appointment";
 import { formatDayLabel, formatTimeLabel } from "@/lib/domain/datetime";
 import type { AppointmentRow, RequestsFilter } from "@/lib/data/admin";
@@ -131,8 +133,8 @@ export function RequestsList({
                 <span className="text-ink-soft text-[15px]">
                   {SIZE_LABELS[a.sizeBucket]} ·{" "}
                   {SERVICE_PACKAGE_LABELS[a.servicePackage]} ·{" "}
-                  {a.logisticsMode === "pickup"
-                    ? `Traslado · ${a.neighborhood}`
+                  {needsTransport(a.logisticsMode)
+                    ? `${LOGISTICS_LABELS[a.logisticsMode]} · ${a.neighborhood}`
                     : "Lo trae"}
                 </span>
                 <div className="flex flex-wrap gap-2">

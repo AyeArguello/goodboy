@@ -12,7 +12,8 @@ export interface WizardForm {
   coatState: CoatState | "";
   servicePackage: ServicePackageKey | "";
   notes: string;
-  logisticsMode: LogisticsMode | "";
+  /** "oneway" is the card picked before choosing which direction (never submitted). */
+  logisticsMode: LogisticsMode | "oneway" | "";
   neighborhood: string;
   pickupAddress: string;
   ownerName: string;

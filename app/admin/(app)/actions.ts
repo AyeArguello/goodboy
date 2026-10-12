@@ -521,7 +521,7 @@ const manualAppointmentSchema = z.object({
   coatState: z.enum(["corto", "largo", "con_nudos", "no_se"]),
   servicePackage: z.enum(["corto_doble_capa", "crecimiento_continuo"]),
   notes: optionalText(1000),
-  logisticsMode: z.enum(["self", "pickup"]),
+  logisticsMode: z.enum(["self", "pickup", "pickup_only", "dropoff_only"]),
   neighborhood: optionalText(100),
   pickupAddress: optionalText(200),
   ownerName: z.string().trim().min(1).max(80),
@@ -571,7 +571,7 @@ export async function createManualAppointment(
     };
   }
   if (
-    data.logisticsMode === "pickup" &&
+    data.logisticsMode !== "self" &&
     (!data.neighborhood || !data.pickupAddress)
   ) {
     return {

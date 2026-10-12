@@ -1,4 +1,5 @@
 import { businessConfig } from "@/lib/config/business";
+import type { LogisticsMode } from "@/lib/domain/appointment";
 import { e164ToWhatsAppDigits } from "@/lib/domain/phone";
 
 /**
@@ -35,6 +36,23 @@ export function customerSummaryMessage(input: {
   ].join("\n\n");
 }
 
+function modalityLine(
+  mode: LogisticsMode,
+  neighborhood: string | null,
+): string {
+  const barrio = neighborhood ? ` (${neighborhood})` : "";
+  switch (mode) {
+    case "self":
+      return "🏠 Modalidad: lo traés vos al local y lo retirás vos.";
+    case "pickup":
+      return `🚗 Modalidad: lo buscamos y lo devolvemos${barrio}; el costo del traslado se confirma según el barrio.`;
+    case "pickup_only":
+      return `🚗 Modalidad: lo buscamos${barrio} y lo retirás vos del local; el traslado de un solo tramo cuesta la mitad y se confirma según el barrio.`;
+    case "dropoff_only":
+      return `🚗 Modalidad: lo traés vos al local y nosotros lo devolvemos${barrio}; el traslado de un solo tramo cuesta la mitad y se confirma según el barrio.`;
+  }
+}
+
 /**
  * Message the admin can open in WhatsApp once a deposit is confirmed. It is
  * only a prefilled link: nothing is sent until the admin taps send, and the
@@ -44,7 +62,7 @@ export function depositConfirmationMessage(input: {
   ownerName: string;
   dogName: string;
   when: string;
-  pickup: boolean;
+  logisticsMode: LogisticsMode;
   neighborhood: string | null;
   depositAmountArs: number;
   /** Orientative price range for the dog's size, e.g. "30.000–40.000". */
@@ -53,9 +71,7 @@ export function depositConfirmationMessage(input: {
 }): string {
   const details = [
     `• 📅 Cuándo: ${input.when}`,
-    input.pickup
-      ? `• 🚗 Modalidad: lo buscamos${input.neighborhood ? ` (${input.neighborhood})` : ""}; el costo del traslado se confirma según el barrio.`
-      : "• 🏠 Modalidad: lo traés vos al local.",
+    `• ${modalityLine(input.logisticsMode, input.neighborhood)}`,
     `• ✅ *Seña recibida: ARS ${input.depositAmountArs.toLocaleString("es-AR")}*`,
     `• 💰 Saldo: se confirma el día del turno al evaluar a ${input.dogName} (precio orientativo ARS ${input.priceRange}, menos la seña).`,
   ];
@@ -124,8 +140,12 @@ export const adminWhatsAppTemplates = {
       `Hola ${input.ownerName} 👋`,
       "Ese horario no me queda 😅 ¿Te sirve [día y hora]? 📅",
     ].join("\n\n"),
-  confirmTransportCost: (input: { neighborhood: string; amount?: string }) =>
-    `🚗 El traslado desde ${input.neighborhood || "tu barrio"} es de *${input.amount ?? "ARS [monto]"}*, ida y vuelta.`,
+  confirmTransportCost: (input: {
+    neighborhood: string;
+    amount?: string;
+    oneWay?: boolean;
+  }) =>
+    `🚗 El traslado desde ${input.neighborhood || "tu barrio"} es de *${input.amount ?? "ARS [monto]"}*, ${input.oneWay ? "un solo tramo" : "ida y vuelta"}.`,
   depositForfeited: (input: { ownerName: string; dogName: string }) =>
     [
       `Hola ${input.ownerName} 👋`,

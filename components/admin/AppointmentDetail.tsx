@@ -14,6 +14,9 @@ import {
   SERVICE_PACKAGE_LABELS,
   SIZE_LABELS,
   type PaymentMethod,
+  needsTransport,
+  isOneWay,
+  LOGISTICS_LABELS,
 } from "@/lib/domain/appointment";
 import { businessConfig, depositAmountFor } from "@/lib/config/business";
 import { googleMapsSearchUrl } from "@/lib/domain/maps";
@@ -96,8 +99,8 @@ export function AppointmentDetail({
   const [now] = useState(() => new Date());
 
   const transportQuote =
-    appointment.logisticsMode === "pickup" && appointment.neighborhood
-      ? quoteTransport(appointment.neighborhood)
+    needsTransport(appointment.logisticsMode) && appointment.neighborhood
+      ? quoteTransport(appointment.neighborhood, appointment.logisticsMode)
       : null;
   const startsAt = new Date(appointment.startsAt);
   const when = `${formatDayLabel(startsAt)} · ${formatTimeLabel(startsAt)}`;
@@ -165,7 +168,7 @@ export function AppointmentDetail({
             ownerName: appointment.ownerName,
             dogName: appointment.dogName,
             when,
-            pickup: appointment.logisticsMode === "pickup",
+            logisticsMode: appointment.logisticsMode,
             neighborhood: appointment.neighborhood,
             depositAmountArs:
               appointment.latestPayment?.amountArs ??
@@ -216,6 +219,7 @@ export function AppointmentDetail({
       text: adminWhatsAppTemplates.confirmTransportCost({
         neighborhood: appointment.neighborhood ?? "",
         amount: transportQuote?.amount,
+        oneWay: isOneWay(appointment.logisticsMode),
       }),
     },
     {
@@ -257,11 +261,11 @@ export function AppointmentDetail({
             </dd>
             <dt className="text-ink-soft">Llegada</dt>
             <dd className="m-0">
-              {appointment.logisticsMode === "pickup"
-                ? `Traslado desde ${appointment.neighborhood} · ${transportQuote ? transportQuote.amount : "costo a confirmar"}`
+              {needsTransport(appointment.logisticsMode)
+                ? `${LOGISTICS_LABELS[appointment.logisticsMode]} · ${appointment.neighborhood} · ${transportQuote ? transportQuote.amount : "costo a confirmar"}`
                 : "Lo trae"}
             </dd>
-            {appointment.logisticsMode === "pickup" ? (
+            {needsTransport(appointment.logisticsMode) ? (
               <>
                 <dt className="text-ink-soft">Dirección</dt>
                 <dd className="m-0">

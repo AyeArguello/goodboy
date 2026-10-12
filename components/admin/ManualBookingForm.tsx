@@ -22,6 +22,9 @@ import {
   type CoatState,
   type ServicePackageKey,
   type SizeBucket,
+  needsTransport,
+  LOGISTICS_LABELS,
+  type LogisticsMode,
 } from "@/lib/domain/appointment";
 import type { ScheduleDay, ScheduleSlot } from "@/lib/data/admin";
 import { createManualAppointment } from "@/app/admin/(app)/actions";
@@ -142,7 +145,7 @@ export function ManualBookingForm({
     "crecimiento_continuo",
   );
   const [notes, setNotes] = useState("");
-  const [logisticsMode, setLogisticsMode] = useState<"self" | "pickup">("self");
+  const [logisticsMode, setLogisticsMode] = useState<LogisticsMode>("self");
   const [neighborhood, setNeighborhood] = useState("");
   const [pickupAddress, setPickupAddress] = useState("");
   const [ownerName, setOwnerName] = useState("");
@@ -448,13 +451,16 @@ export function ManualBookingForm({
           label="Traslado"
           value={logisticsMode}
           onChange={(event) =>
-            setLogisticsMode(event.target.value as "self" | "pickup")
+            setLogisticsMode(event.target.value as LogisticsMode)
           }
         >
-          <option value="self">Lo trae y lo retira la familia</option>
-          <option value="pickup">Lo buscamos y lo devolvemos</option>
+          {(Object.keys(LOGISTICS_LABELS) as LogisticsMode[]).map((mode) => (
+            <option key={mode} value={mode}>
+              {LOGISTICS_LABELS[mode]}
+            </option>
+          ))}
         </SelectField>
-        {logisticsMode === "pickup" ? (
+        {needsTransport(logisticsMode) ? (
           <>
             <TextField
               label="Barrio"

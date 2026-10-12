@@ -95,7 +95,7 @@ describe("depositConfirmationMessage", () => {
     ownerName: "Carolina",
     dogName: "Luna",
     when: "viernes 25 sep · 9:00",
-    pickup: false,
+    logisticsMode: "self" as const,
     neighborhood: null,
     depositAmountArs: 20000,
     priceRange: "40.000–50.000",
@@ -118,11 +118,29 @@ describe("depositConfirmationMessage", () => {
   it("describes pickup with the neighborhood and the transport cost caveat", () => {
     const msg = depositConfirmationMessage({
       ...base,
-      pickup: true,
+      logisticsMode: "pickup" as const,
       neighborhood: "Jardín",
     });
-    expect(msg).toContain("lo buscamos (Jardín)");
+    expect(msg).toContain("lo buscamos y lo devolvemos (Jardín)");
     expect(msg).toContain("costo del traslado se confirma");
+  });
+
+  it("describes the one-way modes and says they cost half", () => {
+    const pickupOnly = depositConfirmationMessage({
+      ...base,
+      logisticsMode: "pickup_only",
+      neighborhood: "Jardín",
+    });
+    expect(pickupOnly).toContain("lo buscamos (Jardín) y lo retirás vos");
+    expect(pickupOnly).toContain("cuesta la mitad");
+    const dropoffOnly = depositConfirmationMessage({
+      ...base,
+      logisticsMode: "dropoff_only",
+      neighborhood: "Jardín",
+    });
+    expect(dropoffOnly).toContain(
+      "lo traés vos al local y nosotros lo devolvemos (Jardín)",
+    );
   });
 
   it("never claims the message was sent automatically", () => {

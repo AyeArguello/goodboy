@@ -2,6 +2,9 @@ import { quoteTransport } from "@/lib/domain/transport";
 import { Alert } from "@/components/ui/Alert";
 import { businessConfig, depositAmountFor } from "@/lib/config/business";
 import {
+  LOGISTICS_LABELS,
+  needsTransport,
+  type LogisticsMode,
   COAT_LABELS,
   SERVICE_PACKAGE_LABELS,
   SIZE_LABELS,
@@ -77,10 +80,9 @@ export function Step6Review({
     },
     {
       label: "Logística",
-      value:
-        form.logisticsMode === "pickup"
-          ? `Necesito traslado · ${form.neighborhood} · ${quoteTransport(form.neighborhood)?.amount ?? "a confirmar"} (se confirma por WhatsApp)`
-          : `Lo llevo yo a ${businessConfig.address.street}`,
+      value: needsTransport(form.logisticsMode)
+        ? `${LOGISTICS_LABELS[form.logisticsMode as LogisticsMode]} · ${form.neighborhood} · ${quoteTransport(form.neighborhood, form.logisticsMode as LogisticsMode)?.amount ?? "a confirmar"} (se confirma por WhatsApp)`
+        : `Lo llevo yo a ${businessConfig.address.street}`,
       step: 3,
     },
     {

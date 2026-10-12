@@ -111,7 +111,31 @@ export const RECEIPT_STATUS_LABELS: Record<ReceiptStatus, string> = {
 
 export type SizeBucket = "pequeno" | "mediano" | "grande";
 export type CoatState = "corto" | "largo" | "con_nudos" | "no_se";
-export type LogisticsMode = "self" | "pickup";
+/**
+ * How the dog gets to and from the shop:
+ * - self: the family brings and collects it.
+ * - pickup: we collect it and bring it back (full round trip).
+ * - pickup_only: we collect it; the family picks it up at the shop (one way).
+ * - dropoff_only: the family brings it; we take it back home (one way).
+ */
+export type LogisticsMode = "self" | "pickup" | "pickup_only" | "dropoff_only";
+
+/** Every mode but "self" means a trip by us, so it needs a barrio and an address. */
+export function needsTransport(mode: string): boolean {
+  return mode === "pickup" || mode === "pickup_only" || mode === "dropoff_only";
+}
+
+/** One-way modes cost half of the full round trip. */
+export function isOneWay(mode: string): boolean {
+  return mode === "pickup_only" || mode === "dropoff_only";
+}
+
+export const LOGISTICS_LABELS: Record<LogisticsMode, string> = {
+  self: "Lo trae y lo retira la familia",
+  pickup: "Lo buscamos y lo devolvemos",
+  pickup_only: "Lo buscamos y lo retira la familia",
+  dropoff_only: "Lo trae la familia y lo devolvemos",
+};
 export type PaymentMethod = "cash" | "bank_transfer" | "mercadopago_link";
 export type PaymentStatus = "pending" | "verified" | "reversed";
 

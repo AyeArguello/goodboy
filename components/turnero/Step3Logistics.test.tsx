@@ -76,3 +76,44 @@ describe("Step3Logistics barrio picker", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+describe("Step3Logistics one-way option", () => {
+  function OneWay() {
+    const [form, setForm] = useState<WizardForm>({ ...initialForm });
+    return (
+      <>
+        <Step3Logistics
+          form={form}
+          errors={{}}
+          setField={(field, value) =>
+            setForm((f) => ({ ...f, [field]: value }))
+          }
+        />
+        <output data-testid="mode">{form.logisticsMode}</output>
+      </>
+    );
+  }
+
+  it("asks which leg we do, then quotes half the round trip", async () => {
+    const user = userEvent.setup();
+    render(<OneWay />);
+
+    await user.click(
+      screen.getByRole("radio", { name: /Solo ida o solo vuelta/ }),
+    );
+    expect(screen.getByTestId("mode")).toHaveTextContent("oneway");
+    expect(screen.queryByRole("combobox", { name: "Barrio" })).toBeNull();
+
+    await user.click(
+      screen.getByRole("radio", { name: /Lo buscamos y lo retiro yo/ }),
+    );
+    expect(screen.getByTestId("mode")).toHaveTextContent("pickup_only");
+
+    await user.type(
+      screen.getByRole("combobox", { name: "Barrio" }),
+      "Jardín{ArrowDown}{Enter}",
+    );
+    expect(screen.getByText(/desde Jard.*ARS 2.500–4.000/)).toBeInTheDocument();
+    expect(screen.getByText(/mitad del traslado completo/)).toBeInTheDocument();
+  });
+});

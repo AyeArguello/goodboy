@@ -1,4 +1,5 @@
 import { businessConfig } from "@/lib/config/business";
+import { isOneWay, type LogisticsMode } from "@/lib/domain/appointment";
 import {
   FAR_BARRIOS,
   FREE_BARRIOS,
@@ -57,8 +58,11 @@ export function searchBarrios(query: string, limit = 8): string[] {
   return [...starts, ...contains].slice(0, limit);
 }
 
-/** Pickup cost for a barrio of Córdoba capital; null if it is not one. */
-export function quoteTransport(neighborhood: string): TransportQuote | null {
+/** Transport cost for a barrio of Córdoba capital (half for one-way modes); null if it is not one. */
+export function quoteTransport(
+  neighborhood: string,
+  mode?: LogisticsMode | "",
+): TransportQuote | null {
   const key = normalize(neighborhood);
   const barrio = BARRIOS.find((b) => b.key === key);
   if (!barrio) return null;
@@ -66,7 +70,18 @@ export function quoteTransport(neighborhood: string): TransportQuote | null {
   if (barrio.tier === "free") {
     return { tier: "free", amount: transportPricing.freeText };
   }
+  const half = isOneWay(mode ?? "");
   return barrio.tier === "nearby"
-    ? { tier: "nearby", amount: transportPricing.nearbyRange }
-    : { tier: "far", amount: transportPricing.farRange };
+    ? {
+        tier: "nearby",
+        amount: half
+          ? transportPricing.nearbyHalfRange
+          : transportPricing.nearbyRange,
+      }
+    : {
+        tier: "far",
+        amount: half
+          ? transportPricing.farHalfRange
+          : transportPricing.farRange,
+      };
 }

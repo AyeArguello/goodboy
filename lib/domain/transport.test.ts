@@ -1,6 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { findBarrio, quoteTransport, searchBarrios } from "./transport";
 
+describe("quoteTransport one-way", () => {
+  it.each(["pickup_only", "dropoff_only"] as const)(
+    "%s costs half of the round trip",
+    (mode) => {
+      expect(quoteTransport("Jardin", mode)?.amount).toBe("ARS 2.500–4.000");
+      expect(quoteTransport("Docta", mode)?.amount).toBe("ARS 5.000–6.500");
+      expect(quoteTransport("Las Palmas", mode)?.amount).toBe("Sin cargo");
+    },
+  );
+
+  it("the full pickup keeps the round-trip price", () => {
+    expect(quoteTransport("Jardin", "pickup")?.amount).toBe("ARS 5.000–8.000");
+  });
+});
+
 describe("quoteTransport", () => {
   it("charges nothing in Las Palmas, whatever the accents or case", () => {
     expect(quoteTransport("Las Palmas")).toEqual({

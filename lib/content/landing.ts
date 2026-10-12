@@ -123,7 +123,7 @@ export function faqs(): { question: string; answer: string }[] {
     },
     {
       question: "¿Cuánto cuesta el traslado?",
-      answer: `${businessConfig.transportPricing.freeLabel}: ${businessConfig.transportPricing.freeText}. ${businessConfig.transportPricing.nearbyLabel}: ${businessConfig.transportPricing.nearbyRange}. ${businessConfig.transportPricing.farLabel}: ${businessConfig.transportPricing.farRange}. Es un único cargo con ida y vuelta, y se confirma según el barrio.`,
+      answer: `${businessConfig.transportPricing.freeLabel}: ${businessConfig.transportPricing.freeText}. ${businessConfig.transportPricing.nearbyLabel}: ${businessConfig.transportPricing.nearbyRange}. ${businessConfig.transportPricing.farLabel}: ${businessConfig.transportPricing.farRange}. Es un único cargo con ida y vuelta (si solo necesitás un tramo, cuesta la mitad) y se confirma según el barrio.`,
     },
     {
       question: "¿Tengo que pagar la seña al pedir el turno?",

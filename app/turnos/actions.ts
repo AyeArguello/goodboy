@@ -20,7 +20,9 @@ const bookingSchema = z
       message: "Elegí el servicio según el pelo de tu perro.",
     }),
     notes: z.string().trim().optional(),
-    logisticsMode: z.enum(["self", "pickup"], { message: "Elegí una opción." }),
+    logisticsMode: z.enum(["self", "pickup", "pickup_only", "dropoff_only"], {
+      message: "Elegí una opción.",
+    }),
     neighborhood: z.string().trim().optional(),
     pickupAddress: z.string().trim().optional(),
     ownerName: z.string().trim().min(1, "Escribí tu nombre."),
@@ -47,7 +49,7 @@ const bookingSchema = z
           "Para enviar la solicitud necesitamos que aceptes los tres puntos.",
       });
     }
-    if (val.logisticsMode === "pickup") {
+    if (val.logisticsMode !== "self") {
       if (!val.neighborhood || !findBarrio(val.neighborhood)) {
         ctx.addIssue({
           code: "custom",
@@ -111,11 +113,11 @@ export async function submitBookingAction(
     notes: v.notes || null,
     logisticsMode: v.logisticsMode,
     neighborhood:
-      v.logisticsMode === "pickup" && v.neighborhood
+      v.logisticsMode !== "self" && v.neighborhood
         ? findBarrio(v.neighborhood)
         : null,
     pickupAddress:
-      v.logisticsMode === "pickup" ? (v.pickupAddress ?? null) : null,
+      v.logisticsMode !== "self" ? (v.pickupAddress ?? null) : null,
     ownerName: v.ownerName,
     phoneE164: phone.e164,
     email: v.email || null,

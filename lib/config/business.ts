@@ -59,6 +59,9 @@ export const businessConfig = {
     nearbyRange: "ARS 5.000–8.000",
     farLabel: "Zonas más alejadas",
     farRange: "ARS 10.000–13.000",
+    /** One-way trips (only there or only back) cost 50% of the round trip. */
+    nearbyHalfRange: "ARS 2.500–4.000",
+    farHalfRange: "ARS 5.000–6.500",
     disclaimer:
       "Servicio sujeto a cobertura y condiciones de seguridad. Confirmamos tu dirección por WhatsApp antes del turno.",
   },

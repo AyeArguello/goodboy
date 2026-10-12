@@ -3,6 +3,11 @@ import { TextField } from "@/components/ui/Field";
 import { SelectableCard } from "@/components/ui/SelectableCard";
 import { businessConfig } from "@/lib/config/business";
 import {
+  isOneWay,
+  needsTransport,
+  type LogisticsMode,
+} from "@/lib/domain/appointment";
+import {
   findBarrio,
   quoteTransport,
   searchBarrios,
@@ -118,7 +123,13 @@ function BarrioCombobox({
 }
 
 export function Step3Logistics({ form, errors, setField }: StepFormProps) {
-  const quote = quoteTransport(form.neighborhood);
+  const mode = form.logisticsMode;
+  const oneWaySelected = mode === "oneway" || isOneWay(mode as LogisticsMode);
+  const quote = quoteTransport(form.neighborhood, mode as LogisticsMode | "");
+  const addressLabel =
+    mode === "dropoff_only"
+      ? "Dirección donde lo devolvemos"
+      : "Dirección de búsqueda";
 
   return (
     <section className="flex flex-col gap-5">
@@ -143,16 +154,25 @@ export function Step3Logistics({ form, errors, setField }: StepFormProps) {
               "Necesito traslado",
               "Lo buscamos y lo devolvemos. Costo según barrio.",
             ],
+            [
+              "oneway",
+              "Solo ida o solo vuelta",
+              "Lo llevás vos y lo devolvemos, o lo buscamos y lo retirás vos. Cuesta la mitad del traslado.",
+            ],
           ] as const
-        ).map(([mode, label, sub]) => {
-          const sel = form.logisticsMode === mode;
+        ).map(([key, label, sub]) => {
+          const sel =
+            key === "oneway" ? oneWaySelected : form.logisticsMode === key;
           return (
             <SelectableCard
-              key={mode}
+              key={key}
               role="radio"
               selected={sel}
               invalid={!!errors.logisticsMode}
-              onClick={() => setField("logisticsMode", mode)}
+              onClick={() => {
+                if (key === "oneway" && oneWaySelected) return;
+                setField("logisticsMode", key);
+              }}
               className="grid grid-cols-[auto_1fr] items-start gap-3.5 rounded-lg px-4.5 py-4"
             >
               <span
@@ -178,7 +198,56 @@ export function Step3Logistics({ form, errors, setField }: StepFormProps) {
         </span>
       ) : null}
 
-      {form.logisticsMode === "pickup" ? (
+      {oneWaySelected ? (
+        <div
+          role="radiogroup"
+          aria-label="Qué tramo hacemos nosotros"
+          className="flex flex-col gap-2.5 pl-1"
+        >
+          {(
+            [
+              [
+                "pickup_only",
+                "Lo buscamos y lo retiro yo",
+                "Nosotros lo buscamos; después lo retirás vos en el local.",
+              ],
+              [
+                "dropoff_only",
+                "Lo llevo yo y que lo devuelvan",
+                "Lo llevás vos al local; nosotros lo devolvemos.",
+              ],
+            ] as const
+          ).map(([value, label, sub]) => {
+            const sel = form.logisticsMode === value;
+            return (
+              <SelectableCard
+                key={value}
+                role="radio"
+                selected={sel}
+                invalid={!!errors.logisticsMode && !sel}
+                onClick={() => setField("logisticsMode", value)}
+                className="grid grid-cols-[auto_1fr] items-start gap-3.5 rounded-lg px-4.5 py-3.5"
+              >
+                <span
+                  className={`mt-0.5 flex size-5 items-center justify-center rounded-full border-2 ${sel ? "border-white" : "border-purple"}`}
+                >
+                  <span
+                    className={`size-2.5 rounded-full ${sel ? "bg-white" : "bg-transparent"}`}
+                  />
+                </span>
+                <span className="flex flex-col gap-0.5">
+                  <strong className="font-heading text-base font-bold">
+                    {label}
+                  </strong>
+                  <span className="text-ink-soft text-sm">{sub}</span>
+                </span>
+              </SelectableCard>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {needsTransport(mode as LogisticsMode | "") ? (
         <div className="flex flex-col gap-4 pl-1">
           <BarrioCombobox
             value={form.neighborhood}
@@ -186,7 +255,7 @@ export function Step3Logistics({ form, errors, setField }: StepFormProps) {
             onChange={(barrio) => setField("neighborhood", barrio)}
           />
           <TextField
-            label="Dirección de búsqueda"
+            label={addressLabel}
             autoComplete="street-address"
             value={form.pickupAddress}
             onChange={(e) => setField("pickupAddress", e.target.value)}
@@ -202,7 +271,9 @@ export function Step3Logistics({ form, errors, setField }: StepFormProps) {
                   Costo del traslado desde {form.neighborhood}: {quote.amount}
                 </strong>
                 <p className="m-0 text-[15px]">
-                  Un único cargo con ida y vuelta.{" "}
+                  {isOneWay(mode as LogisticsMode)
+                    ? "Es un solo tramo: cobramos la mitad del traslado completo."
+                    : "Un único cargo con ida y vuelta."}{" "}
                   {businessConfig.transportPricing.disclaimer}
                 </p>
               </>

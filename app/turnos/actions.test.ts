@@ -81,6 +81,27 @@ describe("submitBookingAction validation", () => {
     spy.mockRestore();
   });
 
+  it.each(["pickup_only", "dropoff_only"] as const)(
+    "accepts the one-way mode %s with barrio and address",
+    async (logisticsMode) => {
+      const result = await submitBookingAction({
+        ...validBase,
+        logisticsMode,
+        neighborhood: "Jardín",
+        pickupAddress: "Calle 123",
+      });
+      expect(result.ok).toBe(true);
+    },
+  );
+
+  it("requires barrio and address for the one-way modes too", async () => {
+    const result = await submitBookingAction({
+      ...validBase,
+      logisticsMode: "dropoff_only",
+    });
+    expect(result.ok).toBe(false);
+  });
+
   it("requires a valid 10-digit phone number", async () => {
     const result = await submitBookingAction({ ...validBase, phone: "123" });
     expect(result.ok).toBe(false);

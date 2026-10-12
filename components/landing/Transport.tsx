@@ -21,8 +21,9 @@ export function Transport() {
           Lo buscamos y lo devolvemos
         </h2>
         <p className="text-ink-soft m-0 max-w-[30em]">
-          Es un único cargo que incluye ida y vuelta. El valor exacto se
-          confirma según tu barrio antes del turno.
+          Es un único cargo que incluye ida y vuelta. Si solo necesitás un tramo
+          (que lo busquemos o que lo devolvamos), cuesta la mitad. El valor
+          exacto se confirma según tu barrio antes del turno.
         </p>
       </div>
       <div className="bg-lavender-100 flex flex-col gap-1 rounded-xl p-6">

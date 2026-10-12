@@ -22,6 +22,7 @@ import {
 } from "./types";
 import { groupSlotsByDay } from "./grouping";
 import { findBarrio } from "@/lib/domain/transport";
+import { needsTransport } from "@/lib/domain/appointment";
 import { Step1Slot } from "./Step1Slot";
 import { Step2Dog } from "./Step2Dog";
 import { Step3Logistics } from "./Step3Logistics";
@@ -140,7 +141,9 @@ function validateStep(step: number, state: State): WizardFieldErrors {
   }
   if (step === 3) {
     if (!form.logisticsMode) errors.logisticsMode = "Elegí una opción.";
-    if (form.logisticsMode === "pickup") {
+    if (form.logisticsMode === "oneway")
+      errors.logisticsMode = "Elegí si lo buscamos o si lo devolvemos.";
+    if (needsTransport(form.logisticsMode)) {
       if (!findBarrio(form.neighborhood))
         errors.neighborhood = "Elegí tu barrio de la lista.";
       if (!form.pickupAddress.trim())
