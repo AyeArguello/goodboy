@@ -35,6 +35,8 @@ const serverEnvSchema = z.object({
   DEPOSIT_TRANSFER_HOLDER: optionalText,
   DEPOSIT_TRANSFER_CBU: optionalText,
   TURNSTILE_SECRET_KEY: z.string().optional(),
+  /** Shared secret the scheduled job sends to /api/cron/*. Unset = the endpoints refuse every call. */
+  CRON_SECRET: z.string().min(16).optional(),
 });
 
 export function getServerEnv() {
@@ -49,6 +51,7 @@ export function getServerEnv() {
     DEPOSIT_TRANSFER_HOLDER: process.env.DEPOSIT_TRANSFER_HOLDER,
     DEPOSIT_TRANSFER_CBU: process.env.DEPOSIT_TRANSFER_CBU,
     TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY,
+    CRON_SECRET: process.env.CRON_SECRET,
   });
   if (!parsed.success) {
     throw new Error(

@@ -13,7 +13,8 @@ export type OutboxKind =
   | "appointment_confirmed"
   | "appointment_cancelled"
   | "appointment_rescheduled"
-  | "refund_recorded";
+  | "refund_recorded"
+  | "owner_weekly_agenda";
 
 export type SendOutcome = "sent" | "skipped" | "failed";
 

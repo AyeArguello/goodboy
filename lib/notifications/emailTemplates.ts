@@ -311,3 +311,46 @@ export function renderRefundRecorded(
     ),
   };
 }
+
+export interface WeeklyAgendaItem {
+  whenLabel: string;
+  dogName: string;
+  ownerName: string;
+  phoneLabel: string;
+  statusLabel: string;
+  /** Prefilled wa.me link with the reminder message; the owner taps send. */
+  reminderUrl: string;
+}
+
+/** Owner-only digest: the dogs booked for the coming week, with a reminder link per turn. */
+export function renderOwnerWeeklyAgenda(d: {
+  rangeLabel: string;
+  items: WeeklyAgendaItem[];
+  panelUrl: string;
+}): RenderedEmail {
+  if (d.items.length === 0) {
+    return {
+      subject: `Turnos de la semana (${d.rangeLabel}): sin turnos`,
+      text: [
+        `No hay turnos cargados para la semana del ${d.rangeLabel}.`,
+        "",
+        `Panel: ${d.panelUrl}`,
+      ].join("\n"),
+    };
+  }
+  const lines = d.items.flatMap((i) => [
+    `• ${i.whenLabel} · ${i.dogName} (${i.ownerName}, ${i.phoneLabel}) · ${i.statusLabel}`,
+    `  Mandar recordatorio por WhatsApp: ${i.reminderUrl}`,
+  ]);
+  return {
+    subject: `Turnos de la semana (${d.rangeLabel}): ${d.items.length}`,
+    text: [
+      `Estos son los turnos de la semana del ${d.rangeLabel}.`,
+      "Es un buen momento para recordarle a cada cliente su turno:",
+      "",
+      ...lines,
+      "",
+      `Panel: ${d.panelUrl}`,
+    ].join("\n"),
+  };
+}
